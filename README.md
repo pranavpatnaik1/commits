@@ -1,4 +1,4 @@
 # commits
 commit to your day
 
-![banner](frontend/public/banner-final.png)
+<img src="frontend/public/banner-final.png" width="100%">
