@@ -4,7 +4,7 @@ import { Navigate } from "react-router-dom";
 
 export const Private = ({ user }) => {
     if (!user) {
-        return <Navigate to="/" />;
+        return <Navigate to="/login" />;
     }
 
     const handleSignOut = () => {

@@ -1,5 +1,6 @@
 import {BrowserRouter, Routes, Route} from "react-router-dom";
-import {Home} from "./pages/Home.jsx";
+import { Home } from "./pages/Home.jsx";
+import { Login } from "./pages/Login.jsx";
 import { Private } from "./pages/Private.jsx";
 import { onAuthStateChanged } from "firebase/auth";
 import "./App.css";
@@ -42,7 +43,8 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path='/' element={<Home user={user} />} />
+        <Route path='/' element={<Home />} />
+        <Route path='/login' element={<Login user={user} />} />
         <Route 
           path='/private' 
           element={

@@ -12,6 +12,6 @@ export const ProtectedRoute = ({children, user}) => {
         return children;
     }
 
-    // If no authenticated user, redirect to home
-    return <Navigate to='/' replace />;
+    // If no authenticated user, redirect to login
+    return <Navigate to='/login' replace />;
 }
