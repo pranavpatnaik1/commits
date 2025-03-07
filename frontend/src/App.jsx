@@ -7,6 +7,7 @@ import "./App.css";
 import { auth } from "./firebase.js";
 import { ProtectedRoute } from "./components/protectedRoute.jsx";
 import { useEffect, useState } from "react";
+import React from "react";
 
 function App() {
   const [user, setUser] = useState(null);
