@@ -1,7 +1,7 @@
 import {BrowserRouter, Routes, Route} from "react-router-dom";
 import { Home } from "./pages/Home.jsx";
 import { Login } from "./pages/Login.jsx";
-import { Private } from "./pages/Private.jsx";
+import { Commits } from "./pages/Commits.jsx";
 import { onAuthStateChanged } from "firebase/auth";
 import "./App.css";
 import { auth } from "./firebase.js";
@@ -46,10 +46,10 @@ function App() {
         <Route path='/' element={<Home />} />
         <Route path='/login' element={<Login user={user} />} />
         <Route 
-          path='/private' 
+          path='/app' 
           element={
             <ProtectedRoute user={user}>
-              <Private user={user} />
+              <Commits user={user} />
             </ProtectedRoute>
           }
         />

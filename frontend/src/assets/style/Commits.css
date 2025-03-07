@@ -1,0 +1,332 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700;1,900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+
+* {
+    background-color: #1479BC;
+}
+
+html {
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+}
+
+.main {
+    font-family: "Inter";
+    margin-left: 50px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding-top: 20px;
+    width: calc(100% - 160px);
+    box-sizing: border-box; 
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+    margin-bottom: 28px;
+}
+
+.main h2 {
+    margin: 0;
+}
+
+.main button {
+    margin-top: 10px;
+}
+
+.user-greeting {
+    display: flex;
+    justify-content: space-between; /* Distributes space between elements */
+    align-items: center;
+    width: 100%;
+}
+
+.profile {
+    display: flex;
+    justify-content: end; /* Aligns the profile pic to the right */
+}
+
+.welcome {
+    width: 100%;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    color: white;
+}
+
+.welcome h2 {
+    font-style: italic;
+    font-weight: 600;
+    font-size: 40px;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.welcome .name {
+    color: #D0E4F2;
+}
+
+.time {
+    margin-right: 18px;
+    padding: 5px;
+    padding-right: 7px;
+    padding-left: 7px;
+    border-radius: 5px;
+    background-color: #6DACD5;
+    box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.445);
+    transition: 0.4s;
+}
+
+.time:hover {
+    background-color: #76b8e4;
+    box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.445);
+    cursor: default;
+}
+
+.day {
+    margin-right: 10px;
+    padding: 5px;
+    padding-right: 7px;
+    padding-left: 7px;
+    border-radius: 5px;
+    background-color: #6DACD5;
+    box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.445);
+    transition: 0.4s;
+}
+
+.day:hover {
+    background-color: #76b8e4;
+    box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.445);
+    cursor: default;
+}
+
+
+.profile-pic {
+    object-fit: cover;
+    width: 50px;
+    height: 50px;
+    border-radius: 80px;
+    border: 2px solid white;
+    box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.445);
+}
+
+.profile-pic:active {
+    border: 3px solid white;
+}
+
+.commits {
+    font-size: 25px;
+    margin-top: 0px;
+    width: 100%;
+    font-weight: 300;
+    font-style: italic;
+}
+
+.commits p {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.commit-box {
+    
+    display: flex;
+    background-color: #6DACD5;
+    align-items: center;
+    height: 170px;
+    max-width: 100%;
+    margin-bottom: 20px;
+    
+    border: 2px solid white;
+    border-radius: 10px;
+    box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.445);
+    padding: 15px;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.commit-week.not-current-month .commit {
+    opacity: 0.7; /* Set opacity for squares not in the current month */
+}
+
+.commit-box::-webkit-scrollbar {
+    height: 2px; /* Height of the horizontal scrollbar */
+    width: 80%;
+}
+
+.commit-box::-webkit-scrollbar-track {
+    background: none; /* Color of the track */
+    border-radius: 10px;
+}
+
+.commit-box::-webkit-scrollbar-thumb {
+    background-color: none; /* Color of the thumb */
+    border-radius: 10px;
+}
+
+.commit-box::-webkit-scrollbar-thumb:hover {
+    background-color: #555; /* Color of the thumb when hovered */
+}
+
+.commit.glowing {
+    opacity: 0.8; /* Full opacity for glowing days */
+}
+
+.commit {
+    transition: 0.1s;
+    opacity: 0.5; /* Default opacity for non-glowing days */
+}
+
+.commit:hover {
+    opacity: 0.9; /* Default opacity for non-glowing days */
+}
+
+
+.commit-week {
+    background: none;
+    margin-right: 5px;
+}
+
+.commit {
+    background-color: #D9D9D9;
+    border-radius: 3px;
+    width: 19px;
+    height: 19px;
+    margin-top: 5px;
+}
+
+.interaction {
+    display: flex;
+}
+
+.recent-box {
+    background-color: #D3ECFC;
+    margin-left: 20px;
+    margin-top: 10px;
+    width: calc(100% - 40px);
+    height: calc(100% - 105px);
+    border-radius: 5px;
+    box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.445);
+    border: 1px solid white;
+}
+
+.recent-commits {
+    border: 2px solid white;
+    background-color: #6DACD5;
+    height: 400px;
+    width: 700px;
+
+    border-radius: 10px;
+    box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.445);
+
+    margin-right: 15px;
+}
+
+.recent-commits p {
+    margin: 0;
+    margin-top: 15px;
+    background-color: transparent;
+    background: transparent;
+    margin-left: 22px;
+    font-size: 40px;
+    font-weight: 600;
+}
+
+.recent-commits p u {
+    text-decoration: underline; /* Explicitly apply underline styling */
+    background-color: transparent; /* Ensure background doesn't change when underlined */
+    text-shadow: 0px 2px 3px rgba(0, 0, 0, 0.445);
+}
+
+.leaderboard {
+    border: 2px solid white;
+    background-color: #6DACD5;
+    border-radius: 10px;
+
+    height: 400px;
+    width: 448px;
+    box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.445);
+}
+
+.leaderboard-title {
+    margin: 0;
+    margin-top: 15px;
+    background-color: transparent;
+    background: transparent;
+    margin-left: 22px;
+    font-size: 40px;
+    font-weight: 600;
+}
+
+.leaderboard-title u {
+    background-color: transparent;
+    background: transparent;
+    text-shadow: 0px 2px 3px rgba(0, 0, 0, 0.445);
+}
+
+.leaderboard-box {
+    background-color: #D3ECFC;
+    margin-left: 20px;
+    margin-top: 10px;
+    width: calc(100% - 40px);
+    height: calc(100% - 105px);
+    border-radius: 5px;
+    box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.445);
+
+    border: 1px solid white;
+}
+
+.committer {
+    display: flex;
+    align-items: center; /* Centers items vertically */
+    position: fixed;
+    width: calc(100% - 300px);
+    left: 50%;
+    top: 92%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    padding: 10px;
+    border-radius: 10px;
+    border: 4px solid #2EABFF;
+    transition: 0.2s;
+
+    box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.445);
+}
+
+.committer:focus-within {
+    border: 6px solid #1ba2fd;
+}
+
+.committer p {
+    position: static; /* Remove absolute positioning */
+    margin: 0 20px 0 8px; /* Space between text and input */
+    font-size: 17px;
+    font-weight: 600;
+    color: #3CB1E8;
+    background-color: transparent;
+    line-height: 1; /* Ensures better vertical alignment */
+}
+
+.commit-input {
+    background: none;
+    border: none;
+    color: #3CB1E8;
+    width: 100%;
+    font-size: 16px;
+    font-weight: 500;
+    height: auto;
+    padding: 5px 0; /* Helps with alignment */
+}
+
+.commit-input:focus {
+    outline: none;
+}
+
+.commit-input::placeholder {
+    opacity: 0.5;
+}
+
+
+.main button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    color: white;
+    border: 1px solid white;
+    cursor: pointer;
+}

@@ -19,7 +19,7 @@ export const Login = ({user}) => {
 
     if (user?.uid) {
         console.log("Login: Redirecting to private, found uid:", user.uid);
-        return <Navigate to='/private' />;
+        return <Navigate to='/app' />;
     }
 
     const handleMethodChange = (e) => {
