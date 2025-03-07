@@ -48,12 +48,16 @@ export const Commits = ({ user }) => {
         if (!commitText.trim()) return; // Prevent empty commits
 
         const userRef = doc(db, "users", user.uid); // Reference to user's document
+        const now = new Date();
+        const formattedDate = now.toISOString().split("T")[0]; // "YYYY-MM-DD"
+        const formattedTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
         try {
             await updateDoc(userRef, {
                 commits: arrayUnion({
+                        date: formattedDate,
                         text: commitText,
-                        timestamp: new Date().toISOString(), // Store the current time as ISO string
+                        timestamp: formattedTime, // Store the current time as ISO string
                 }),
             });
             console.log("Commit saved to Firestore");
@@ -143,7 +147,7 @@ export const Commits = ({ user }) => {
                             recentCommits.map((commit, index) => (
                                 <div key={index} className="commit-entry">
                                     <p className="commit-name">{commit.text}</p>
-                                    <span className="commit-time">{new Date(commit.timestamp).toLocaleString()}</span>
+                                    <span className="commit-time">{commit.timestamp}</span>
                                 </div>
                             ))
                         ) : (
