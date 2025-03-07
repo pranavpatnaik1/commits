@@ -3,8 +3,7 @@ import "../assets/style/Commits.css";
 import { auth } from "../firebase";
 import { Navigate } from "react-router-dom";
 import { getFirestore, doc, updateDoc, arrayUnion, setDoc, getDoc, increment } from "firebase/firestore";
-import { useState, useEffect, useRef } from "react";
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 const db = getFirestore();
 

@@ -1,12 +1,11 @@
 /* eslint react/prop-types: 0 */
-import { useState } from "react"
+import React, { useState } from "react";
 import { createUserWithEmailAndPassword,
     signInWithEmailAndPassword
  } from "firebase/auth";
 import { auth } from "../firebase";
 import { Navigate } from "react-router-dom";
 import { getFirestore, doc, setDoc, serverTimestamp, getDoc } from "firebase/firestore"; 
-import React from "react";
 
 const db = getFirestore();
 

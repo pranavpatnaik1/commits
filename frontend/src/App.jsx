@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from "react";
 import {BrowserRouter, Routes, Route} from "react-router-dom";
 import { Home } from "./pages/Home.jsx";
 import { Login } from "./pages/Login.jsx";
@@ -6,8 +7,6 @@ import { onAuthStateChanged } from "firebase/auth";
 import "./App.css";
 import { auth } from "./firebase.js";
 import { ProtectedRoute } from "./components/protectedRoute.jsx";
-import { useEffect, useState } from "react";
-import React from "react";
 
 function App() {
   const [user, setUser] = useState(null);
