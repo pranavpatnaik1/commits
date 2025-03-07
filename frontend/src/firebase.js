@@ -1,6 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore } from "firebase/firestore"; 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -24,11 +25,12 @@ console.log('Firebase Config:', {
   appId: firebaseConfig.appId ? 'exists' : 'missing',
 });
 
-let auth;
+let auth, db;
 
 try {
   const app = initializeApp(firebaseConfig);
   auth = getAuth(app);
+  db = getFirestore(app);
 
   // Add listener to track auth state
   onAuthStateChanged(auth, (user) => {
@@ -44,4 +46,4 @@ try {
   console.error("Firebase initialization error:", error);
 }
 
-export { auth };
+export { auth, db };

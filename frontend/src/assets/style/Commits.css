@@ -71,6 +71,7 @@ html {
     background-color: #6DACD5;
     box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.445);
     transition: 0.4s;
+    white-space: nowrap;
 }
 
 .time:hover {
@@ -88,6 +89,7 @@ html {
     background-color: #6DACD5;
     box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.445);
     transition: 0.4s;
+    white-space: nowrap;
 }
 
 .day:hover {
@@ -204,6 +206,21 @@ html {
     border-radius: 5px;
     box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.445);
     border: 1px solid white;
+    overflow-y: auto;
+}
+
+.recent-box::-webkit-scrollbar {
+    width: 4px;
+}
+
+.recent-box::-webkit-scrollbar-track {
+    background-color: transparent;
+    border-radius: 10px;
+}
+
+.recent-box::-webkit-scrollbar-thumb {
+    background-color: #ffffff; /* Optional: Customize the scrollbar color */
+    border-radius: 10px;
 }
 
 .recent-commits {
@@ -216,9 +233,10 @@ html {
     box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.445);
 
     margin-right: 15px;
+    overflow-y: hidden;
 }
 
-.recent-commits p {
+.recent-title {
     margin: 0;
     margin-top: 15px;
     background-color: transparent;
@@ -322,6 +340,34 @@ html {
     opacity: 0.5;
 }
 
+.submit {
+    position: static; /* Remove absolute positioning */
+    margin: 0;
+    font-size: 17px;
+    font-weight: 600;
+    color: #3CB1E8;
+    line-height: 1; /* Ensures better vertical alignment */
+}
+
+.commit-entry {
+    font-size: 15px;
+    background-color: transparent;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    margin-left: 10px;
+    color: #3CB1E8;
+}
+
+.commit-name {
+    font-weight: 600;
+    margin-top: 0;
+    margin-bottom: 0;
+    background-color: transparent;
+}
+
+.commit-time {
+    background-color: transparent;
+}
 
 .main button {
     margin-top: 20px;

@@ -5,6 +5,9 @@ import { createUserWithEmailAndPassword,
  } from "firebase/auth";
 import { auth } from "../firebase";
 import { Navigate } from "react-router-dom";
+import { getFirestore, doc, setDoc, serverTimestamp, getDoc } from "firebase/firestore"; 
+
+const db = getFirestore();
 
 export const Login = ({user}) => {
     const [email, setEmail] = useState("");
@@ -33,9 +36,18 @@ export const Login = ({user}) => {
 
         if (isSignUpActive) {
             createUserWithEmailAndPassword(auth, email, password)
-                .then((userCredential) => {
+                .then(async (userCredential) => {
                     const user = userCredential.user;
                     console.log(user);
+
+                    const userRef = doc(db, "users", user.uid);  // Reference to user's document
+                    await setDoc(userRef, {
+                        email: user.email,
+                        createdAt: serverTimestamp(),
+                        commits_master: {}
+                    });
+
+                    console.log("User data saved to Firestore");
                 })
                 .catch((error) => {
                     const errorCode = error.code;
@@ -44,9 +56,27 @@ export const Login = ({user}) => {
                 });
         } else {
             signInWithEmailAndPassword(auth, email, password)
-                .then((userCredential) => {
+                .then(async (userCredential) => {
                     const user = userCredential.user;
                     console.log(user);
+
+                    const getUserData = async (userId) => {
+                        try {
+                            const userDocRef = doc(db, "users", userId);
+                            const docSnap = await getDoc(userDocRef);
+                    
+                            if (docSnap.exists()) {
+                                console.log("User data:", docSnap.data());
+                                // Do something with the user data (e.g., update UI)
+                            } else {
+                                console.log("No such document!");
+                            }
+                        } catch (error) {
+                            console.error("Error getting document:", error);
+                        }
+                    };
+
+                    await getUserData(user.uid);
                 })
                 .catch((error) => {
                     const errorCode = error.code;
@@ -58,6 +88,12 @@ export const Login = ({user}) => {
 
     const handleEmailChange = (event) => setEmail(event.target.value);
     const handlePasswordChange = (event) => setPassword(event.target.value);
+
+    
+
+    
+
+
 
     return (
         <section>
