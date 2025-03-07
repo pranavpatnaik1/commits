@@ -2,8 +2,8 @@ import { signOut } from "firebase/auth";
 import "../assets/style/Commits.css";
 import { auth } from "../firebase";
 import { Navigate } from "react-router-dom";
-import { getFirestore, doc, updateDoc, arrayUnion, setDoc, getDoc } from "firebase/firestore";
-import { useState, useEffect } from "react";
+import { getFirestore, doc, updateDoc, arrayUnion, setDoc, getDoc, increment } from "firebase/firestore";
+import { useState, useEffect, useRef } from "react";
 
 const db = getFirestore();
 
@@ -11,6 +11,7 @@ export const Commits = ({ user }) => {
     const [commitText, setCommitText] = useState("");
     const [recentCommits, setRecentCommits] = useState([]);
     const [currentDate, setCurrentDate] = useState("");
+    const [commitCounts, setCommitCounts] = useState({});
     const [currentTime, setCurrentTime] = useState("");
 
     // Function to update the date and time
@@ -50,7 +51,7 @@ export const Commits = ({ user }) => {
         const userRef = doc(db, "users", user.uid); // Reference to user's document
         const now = new Date();
         const formattedDate = now.toISOString().split("T")[0]; // "YYYY-MM-DD"
-        const formattedTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const formattedTime = now.toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit', timeZone: "America/New_York" });
 
         try {
             await updateDoc(userRef, {
@@ -59,6 +60,7 @@ export const Commits = ({ user }) => {
                         text: commitText,
                         timestamp: formattedTime, // Store the current time as ISO string
                 }),
+                [`commitCounts.${formattedDate}`]: increment(1),
             });
             console.log("Commit saved to Firestore");
             setCommitText(""); // Clear input after saving
@@ -85,6 +87,9 @@ export const Commits = ({ user }) => {
                 if (userData.commits) {
                     setRecentCommits(userData.commits);
                 }
+                if (userData.commitCounts) {
+                    setCommitCounts(userData.commitCounts); // Store commit counts
+                }
             } else {
                 console.log("No such document!");
             }
@@ -97,10 +102,36 @@ export const Commits = ({ user }) => {
         fetchCommits();
     }, [user]);
 
-    const commitWeeks = Array.from({ length: 52 });
-    const currentMonth = new Date().getMonth(); // Get the current month (0-11)
+    const now = new Date();
+    const dayOfMonth = now.getDate();
+    const dayIndex = dayOfMonth - 1;  // Zero-based index
 
-    const daysInCurrentMonth = new Date(new Date().getFullYear(), currentMonth + 1, 0).getDate();
+    // Get the corresponding week and commit position in the grid
+    const commitWeeks = Array.from({ length: 52 });
+    const daysInCurrentMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+
+    const countCommitsForToday = () => {
+        return recentCommits.filter(commit => commit.date === currentDate).length;
+    };
+
+    const commitsToday = countCommitsForToday();
+    const commitHue = (commitsToday * 20) % 256;
+    const redHue = Math.max(20, 217 - commitsToday * 20);
+    const greenHue = Math.max(120, 217 - commitsToday * 20);
+    const commitColor = `rgb(${redHue}, ${greenHue}, 200)`;
+
+    // Now, you can target the specific square by determining the row (week) and column (day)
+    const targetWeek = Math.floor(dayIndex / 7);  // Which week the square falls in
+    const targetDay = dayIndex % 7;  // Which day in the week it is
+
+    const targetSquareRef = useRef(null);
+
+    const formattedDate = now.toISOString().split("T")[0]; // "YYYY-MM-DD"
+
+    console.log("Current Date:", currentDate);
+    console.log("Formatted Date:", formattedDate);
+    console.log("Commits Today:", commitsToday);
+    console.log("Commit Color:", commitColor);
     
     return (
         <div className="main">
@@ -126,14 +157,21 @@ export const Commits = ({ user }) => {
                 <div className="commit-box">
                     {commitWeeks.map((_, weekIndex) => (
                         <div key={weekIndex} className="commit-week">
-                            {Array.from({ length: 7 }).map((_, commitIndex) => {
-                                const dayIndex = weekIndex * 7 + commitIndex;
-                                const isGlowing = dayIndex < daysInCurrentMonth;
-                                return (
-                                    <div key={commitIndex} className={`commit ${isGlowing ? 'glowing' : ''}`}></div>
-                                );
-                            })}
-                        </div>
+                        {Array.from({ length: 7 }).map((_, commitIndex) => {
+                            const squareIndex = weekIndex * 7 + commitIndex;
+                            const isToday = squareIndex === dayIndex; // Check if this is today's square
+                            const isBeforeToday = squareIndex < dayIndex;
+
+                            return (
+                                <div 
+                                    key={commitIndex} 
+                                    ref={isToday ? targetSquareRef : null} // Only assign ref to today's square
+                                    className={`commit ${isToday ? 'glowing' : ''} ${isBeforeToday ? 'dimmed' : ''}`}
+                                    style={{ backgroundColor: isToday ? commitColor : '' }}
+                                />
+                            );
+                        })}
+                    </div>
                     ))}
                 </div>
             </div>
@@ -144,12 +182,19 @@ export const Commits = ({ user }) => {
                     <p className="recent-title"><u>recent commits</u></p>
                     <div className="recent-box">
                     {recentCommits.length > 0 ? (
-                            recentCommits.map((commit, index) => (
-                                <div key={index} className="commit-entry">
-                                    <p className="commit-name">{commit.text}</p>
-                                    <span className="commit-time">{commit.timestamp}</span>
-                                </div>
-                            ))
+                            recentCommits.map((commit, index) => {
+                                // Check if commit.date matches the formattedDate
+                                const commitDate = commit.date; // Assuming commit.date is in "YYYY-MM-DD" format
+                                if (commitDate === formattedDate) {
+                                    return (
+                                        <div key={index} className="commit-entry">
+                                            <p className="commit-name">{commit.text}</p>
+                                            <span className="commit-time">{commit.timestamp}</span>
+                                        </div>
+                                    );
+                                }
+                                return; // Skip commits not matching the date
+                            })
                         ) : (
                             <p>No commits yet!</p>
                         )}
@@ -177,7 +222,7 @@ export const Commits = ({ user }) => {
                 {/* <button className="submit" onClick={handleCommit}>Submit</button> */}
             </div>
                 
-            <button onClick={handleSignOut}>Sign Out</button>
+            <button className='sign-out' onClick={handleSignOut}>Sign Out</button>
         </div>
     );
 };
