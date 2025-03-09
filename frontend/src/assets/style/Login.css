@@ -17,6 +17,7 @@
     position: fixed;
     top: 0;
     left: 0;
+    animation: fadeIn 0.5s ease-in;
 }
 
 .login form {
@@ -36,6 +37,7 @@
     background-color: #6DACD5;
     box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
     box-sizing: border-box;
+    animation: fadeIn 0.7s ease-in;
 }
 
 .login-email-input, .login-pwd-input {
@@ -102,4 +104,15 @@ legend h2 {
 
 .login-to-signup-button:hover {
     background-color: #007ccf;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }

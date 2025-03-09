@@ -1,0 +1,157 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700;1,900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes lightUp {
+    0% { background-color: #d9d9d9; }
+    50% { background-color: #8BD1FF; }
+    100% { background-color: var(--final-color); }
+}
+
+.commit-slogan {
+    font-family: 'Inter';
+    font-size: 85px;
+    font-weight: 600;
+    position: absolute;
+    left: 50%;
+    top: 35%;
+    text-shadow: 0px 2px 3px rgba(0, 0, 0, 0.63);
+    transform: translate(-50%, -50%);
+    margin: 0;
+    color: white;
+    z-index: 1;
+    white-space: nowrap;
+    overflow: visible;
+}
+
+.commit-slogan i {
+    display: inline-block;
+    animation: fadeIn 1s ease-out forwards;
+}
+
+.start-now-btn {
+    font-family: 'Inter';
+    position: absolute;
+    left: 50%;
+    top: 48%;
+    transform: translate(-50%, -50%);
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    background-color: #118FE2;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    border: 2px solid white;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: 0.1s;
+    margin-top: 20px;
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
+    opacity: 1;
+}
+
+.start-now-btn:hover {
+    border: 3px solid white;
+    background-color: #169eff;
+}
+
+.start-now-btn:active {
+    background-color: #106db0;
+}
+
+.home-commit {
+    transition: 0.1s;
+    border-radius: 3px;
+    opacity: 1;
+    width: 19px;
+    height: 19px;
+    margin-top: 4px;
+    justify-content: center;
+    background-color: #d9d9d9;
+}
+
+.home-commit.lit {
+    animation: lightUp 0.5s forwards;
+}
+
+.home-container {
+    position: relative;
+    background-color: #1479BC;
+    padding: 0;
+    width: 100%;
+    height: 100vh;
+    box-sizing: border-box;
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+    padding-top: 60px;  /* Add padding to account for fixed nav */
+}
+
+.home-container::before {
+    content: '';
+    position: absolute;
+    width: 150%;
+    height: 100%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0) 70%);
+    pointer-events: none;
+}
+
+.grid-container {
+    display: flex;
+    width: 100%;
+    overflow-x: auto;
+    background-color: #1479BC;
+    justify-content: center;
+    align-items: flex-end;
+}
+
+.commit-week {
+    background: none;
+    margin-right: 5px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.home-logo {
+    width: 35px;
+    height: 35px;
+    margin-right: 5px;
+}
+
+.nav-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    background-color: #1883CB;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    padding: 0 30px;
+    box-sizing: border-box;
+    z-index: 100;
+}
+
+.nav-logo {
+    font-family: 'Inter';
+    font-size: 24px;
+    font-weight: 600;
+    color: white;
+    text-decoration: none;
+}
