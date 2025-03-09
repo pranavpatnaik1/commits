@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Home } from "./pages/Home.jsx";
 import { Login } from "./pages/Login.jsx";
 import { Commits } from "./pages/Commits.jsx";
+import { Signup } from "./pages/Signup.jsx";
 import { onAuthStateChanged } from "firebase/auth";
 import "./App.css";
 import { auth } from "./firebase.js";
@@ -45,6 +46,7 @@ function App() {
       <Routes>
         <Route path='/' element={<Home />} />
         <Route path='/login' element={<Login user={user} />} />
+        <Route path='/signup' element={<Signup user={user} />} />
         <Route 
           path='/app' 
           element={

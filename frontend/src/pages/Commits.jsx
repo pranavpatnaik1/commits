@@ -180,7 +180,7 @@ export const Commits = ({ user }) => {
                     <div className="dropdown-content" id="dropdownMenu">
                         <h2 className="user-official-name">Pranav Patnaik</h2>
                         <p className="username">@pranavpatnaik_</p>
-                        <p className="commit-number">121 commits</p>
+                        <p className="commit-number">{commitsToday} commits</p>
                         <hr />
                         <div className="admin">
                             
