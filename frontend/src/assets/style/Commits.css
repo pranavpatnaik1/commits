@@ -184,16 +184,18 @@ body {
 }
 
 .commit.glowing {
-    opacity: 0.8; /* Full opacity for glowing days */
+    border: 0.001px solid white;
+    opacity: 1; /* Full opacity for glowing days */
 }
 
 .commit.dimmed {
-    opacity: 0.3;
-    background-color: #ccc;  /* Optional: dimmed background */
+    opacity: 0.2;
+    background-color: #0f0f0f;
   }
 
 .commit:hover {
-    opacity: 0.9; /* Default opacity for non-glowing days */
+    
+    transform: scale(1.2);
 }
 
 

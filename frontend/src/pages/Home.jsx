@@ -46,7 +46,7 @@ export const Home = () => {
         <>
             <nav className="nav-bar">
                 <img src="/commits-logo.png" alt="logo" className="home-logo"/>
-                <a href="/" className="nav-logo">commits</a>
+                <p className="nav-logo">commits</p>
             </nav>
             <div className="home-container">
                 <h2 className="commit-slogan">It's time to <i>commit.</i></h2>

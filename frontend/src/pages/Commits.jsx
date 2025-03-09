@@ -139,9 +139,9 @@ export const Commits = ({ user }) => {
 
     const commitsToday = countCommitsForToday();
     const commitHue = (commitsToday * 20) % 256;
-    const redHue = Math.max(20, 217 - commitsToday * 20);
-    const greenHue = Math.max(120, 217 - commitsToday * 20);
-    const commitColor = `rgb(${redHue}, ${greenHue}, 200)`;
+    const redHue = Math.max(20, 217 - commitsToday * 30);
+    const greenHue = Math.max(120, 217 - commitsToday * 15);
+    const commitColor = `rgb(${redHue}, ${greenHue}, 225)`;
 
     // Now, you can target the specific square by determining the row (week) and column (day)
     const targetWeek = Math.floor(dayIndex / 7);  // Which week the square falls in
