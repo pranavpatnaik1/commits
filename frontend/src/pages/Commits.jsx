@@ -33,6 +33,33 @@ export const Commits = ({ user }) => {
         return () => clearInterval(interval);
     }, []);
 
+    useEffect(() => {
+        fetchCommits();
+    }, [user]);
+
+    useEffect(() => {
+        // Close the dropdown if the user clicks outside
+        const closeDropdown = (event) => {
+          if (!event.target.matches('.profile-pic, .profile-pic *')) {
+            const dropdowns = document.getElementsByClassName("dropdown-content");
+            for (let i = 0; i < dropdowns.length; i++) {
+              const openDropdown = dropdowns[i];
+              if (openDropdown.style.display === "block") {
+                openDropdown.style.display = "none";
+              }
+            }
+          }
+        };
+      
+        // Add event listener to close dropdown
+        window.addEventListener('click', closeDropdown);
+      
+        // Cleanup the event listener when the component unmounts
+        return () => {
+          window.removeEventListener('click', closeDropdown);
+        };
+      }, []);  // Empty dependency array means this effect runs only once, on mount
+
     // LOGIN DETAILS
 
     if (!user) {
@@ -98,10 +125,6 @@ export const Commits = ({ user }) => {
         }
     };
 
-    useEffect(() => {
-        fetchCommits();
-    }, [user]);
-
     const now = new Date();
     const dayOfMonth = now.getDate();
     const dayIndex = dayOfMonth - 1;  // Zero-based index
@@ -132,25 +155,12 @@ export const Commits = ({ user }) => {
     console.log("Formatted Date:", formattedDate);
     console.log("Commits Today:", commitsToday);
     console.log("Commit Color:", commitColor);
-
-
-    const toggleDropdown = () => {
+      
+      const toggleDropdown = () => {
         const dropdown = document.getElementById("dropdownMenu");
         dropdown.style.display = (dropdown.style.display === "block") ? "none" : "block";
-      }
+      };
       
-      // Close the dropdown if the user clicks outside
-      window.onClick = function(event) {
-        if (!event.target.matches('.profile-pic, .profile-pic *')) {
-          const dropdowns = document.getElementsByClassName("dropdown-content");
-          for (let i = 0; i < dropdowns.length; i++) {
-            const openDropdown = dropdowns[i];
-            if (openDropdown.style.display === "block") {
-              openDropdown.style.display = "none";
-            }
-          }
-        }
-      }
     
     return (
         <div className="main">
@@ -167,10 +177,18 @@ export const Commits = ({ user }) => {
                 </div>
                 <div className="profile">
                     <img src="/IMG_3813.jpg" alt="" className='profile-pic' onClick={toggleDropdown}/>
-                    <div class="dropdown-content" id="dropdownMenu">
-                        <a href="#">Option 1</a>
-                        <a href="#">Option 2</a>
-                        <a href="#">Option 3</a>
+                    <div className="dropdown-content" id="dropdownMenu">
+                        <h2 className="user-official-name">Pranav Patnaik</h2>
+                        <p className="username">@pranavpatnaik_</p>
+                        <p className="commit-number">121 commits</p>
+                        <hr />
+                        <div className="admin">
+                            
+                            <button className="log-out" onClick={handleSignOut}>Sign Out</button>
+                            <img src="add friends.png" alt="friends" className="friends"/>
+                            <img src="settings.png" alt="settings" className="settings"/>
+                            
+                        </div>
                     </div>
                 </div>
             </div>
@@ -245,8 +263,6 @@ export const Commits = ({ user }) => {
                 
                 {/* <button className="submit" onClick={handleCommit}>Submit</button> */}
             </div>
-                
-            <button className='sign-out' onClick={handleSignOut}>Sign Out</button>
         </div>
     );
 };
