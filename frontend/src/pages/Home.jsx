@@ -3,8 +3,8 @@ import React from "react";
 export const Home = () => {
     return (
         <section>
-            <h1>Welcome to the App</h1>
-            <p>This is the public home page</p>
+            <h1>Welcome to Commits</h1>
+            <p>home page</p>
             <a href="/login">Login</a>
         </section>
     )
