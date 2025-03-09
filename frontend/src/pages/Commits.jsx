@@ -132,6 +132,25 @@ export const Commits = ({ user }) => {
     console.log("Formatted Date:", formattedDate);
     console.log("Commits Today:", commitsToday);
     console.log("Commit Color:", commitColor);
+
+
+    const toggleDropdown = () => {
+        const dropdown = document.getElementById("dropdownMenu");
+        dropdown.style.display = (dropdown.style.display === "block") ? "none" : "block";
+      }
+      
+      // Close the dropdown if the user clicks outside
+      window.onClick = function(event) {
+        if (!event.target.matches('.profile-pic, .profile-pic *')) {
+          const dropdowns = document.getElementsByClassName("dropdown-content");
+          for (let i = 0; i < dropdowns.length; i++) {
+            const openDropdown = dropdowns[i];
+            if (openDropdown.style.display === "block") {
+              openDropdown.style.display = "none";
+            }
+          }
+        }
+      }
     
     return (
         <div className="main">
@@ -147,7 +166,12 @@ export const Commits = ({ user }) => {
                     {currentTime}
                 </div>
                 <div className="profile">
-                    <img src="/IMG_3813.jpg" alt="" className='profile-pic'/>
+                    <img src="/IMG_3813.jpg" alt="" className='profile-pic' onClick={toggleDropdown}/>
+                    <div class="dropdown-content" id="dropdownMenu">
+                        <a href="#">Option 1</a>
+                        <a href="#">Option 2</a>
+                        <a href="#">Option 3</a>
+                    </div>
                 </div>
             </div>
             
