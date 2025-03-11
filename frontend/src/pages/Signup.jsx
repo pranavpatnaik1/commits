@@ -10,6 +10,8 @@ const db = getFirestore();
 export const Signup = ({user}) => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [full_name, setName] = useState("");
+    const [username, setUsername] = useState("");
     const navigate = useNavigate();
 
     if (user?.uid) {
@@ -25,9 +27,16 @@ export const Signup = ({user}) => {
                 const user = userCredential.user;
                 const userRef = doc(db, "users", user.uid);
                 await setDoc(userRef, {
+                    name: full_name,
+                    username: username,
                     email: user.email,
                     createdAt: serverTimestamp(),
-                    commits_master: {}
+                    commits_master: {},
+                    friends: [],
+                    requests: {
+                        pending_requests: [],
+                        incoming_requests: []
+                    }
                 });
                 console.log("User data saved to Firestore");
             })
@@ -43,7 +52,19 @@ export const Signup = ({user}) => {
                 <fieldset className="signup-form">
                     <div className="signup-full-name">
                         <p>Full Name</p>
-                        <input type="text" className="signup-name"/>
+                        <input
+                        type="text"
+                        id="name" 
+                        onChange={(e) => setName(e.target.value)} 
+                        className="signup-name"/>
+                    </div>
+                    <div className="signup-email-input">
+                        <p>Username</p>
+                        <input
+                        type="text"
+                        id="name" 
+                        onChange={(e) => setUsername(e.target.value)} 
+                        className="signup-name"/>
                     </div>
                     <div className="signup-email-input">
                         <p>Email</p>

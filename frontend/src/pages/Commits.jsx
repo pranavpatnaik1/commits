@@ -13,6 +13,22 @@ export const Commits = ({ user }) => {
     const [currentDate, setCurrentDate] = useState("");
     const [commitCounts, setCommitCounts] = useState({});
     const [currentTime, setCurrentTime] = useState("");
+    const [userData, setUserData] = useState(null);
+
+    useEffect(() => {
+        const fetchUserData = async () => {
+            if (user?.uid) {
+                const userRef = doc(db, "users", user.uid);
+                const docSnap = await getDoc(userRef);
+                if (docSnap.exists()) {
+                    setUserData(docSnap.data());
+                }
+            }
+        };
+        fetchUserData();
+    }, [user]);
+
+    const firstName = userData?.name ? userData.name.split(' ')[0].toLowerCase() : '';
 
     // Function to update the date and time
     const updateDateTime = () => {
@@ -40,7 +56,7 @@ export const Commits = ({ user }) => {
     useEffect(() => {
         // Close the dropdown if the user clicks outside
         const closeDropdown = (event) => {
-          if (!event.target.matches('.profile-pic, .profile-pic *')) {
+          if (!event.target.matches('.profile-pic, .profile-pic *, .friends, .friends *, .settings, .settings *')) {
             const dropdowns = document.getElementsByClassName("dropdown-content");
             for (let i = 0; i < dropdowns.length; i++) {
               const openDropdown = dropdowns[i];
@@ -59,6 +75,56 @@ export const Commits = ({ user }) => {
           window.removeEventListener('click', closeDropdown);
         };
       }, []);  // Empty dependency array means this effect runs only once, on mount
+
+    useEffect(() => {
+        const closeDropdowns = (event) => {
+            const dropdown = document.getElementById("dropdownMenu");
+            const friendsMenu = document.getElementById("friendsMenu");
+            const overlay = document.getElementById("overlay");
+
+            if (!event.target.closest('.profile-pic') && !event.target.closest('.friends') && !event.target.closest('.settings') && !event.target.closest('.dropdown-content') && !event.target.closest('.friends-content')) {
+                if (dropdown && dropdown.style.display === "block") {
+                    dropdown.style.display = "none";
+                }
+                if (friendsMenu && friendsMenu.style.display === "block") {
+                    friendsMenu.style.display = "none";
+                    overlay.style.display = "none";
+                }
+            }
+        };
+
+        document.addEventListener('mousedown', closeDropdowns);
+        return () => {
+            document.removeEventListener('mousedown', closeDropdowns);
+        };
+    }, []);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            const friendsMenu = document.getElementById("friendsMenu");
+            const overlay = document.getElementById("overlay");
+            const friendsButton = event.target.closest('.friends');
+
+            // If clicking outside the friends menu and not on the friends button
+            if (!friendsButton && !event.target.closest('.friends-content')) {
+                if (friendsMenu && overlay) {
+                    friendsMenu.style.display = "none";
+                    overlay.style.display = "none";
+                }
+                if (friendsMenu) {
+                    friendsMenu.style.display = "none";
+                }
+                if (overlay) {
+                    overlay.style.display = "none";
+                }
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []); 
 
     // LOGIN DETAILS
 
@@ -82,7 +148,7 @@ export const Commits = ({ user }) => {
 
         try {
             await updateDoc(userRef, {
-                commits: arrayUnion({
+                commits_master: arrayUnion({
                         date: formattedDate,
                         text: commitText,
                         timestamp: formattedTime, // Store the current time as ISO string
@@ -106,16 +172,22 @@ export const Commits = ({ user }) => {
     };
 
     const fetchCommits = async () => {
-        const userRef = doc(db, "users", user.uid); // Reference to user's document
+        const userRef = doc(db, "users", user.uid);
         try {
             const docSnap = await getDoc(userRef);
             if (docSnap.exists()) {
                 const userData = docSnap.data();
-                if (userData.commits) {
-                    setRecentCommits(userData.commits);
+                if (userData.commits_master) {
+                    // Convert to array if it's not already one
+                    const commits = Array.isArray(userData.commits_master) 
+                        ? userData.commits_master 
+                        : Object.values(userData.commits_master);
+                    setRecentCommits(commits);
+                } else {
+                    setRecentCommits([]); // Initialize as empty array if no commits exist
                 }
                 if (userData.commitCounts) {
-                    setCommitCounts(userData.commitCounts); // Store commit counts
+                    setCommitCounts(userData.commitCounts);
                 }
             } else {
                 console.log("No such document!");
@@ -143,10 +215,6 @@ export const Commits = ({ user }) => {
     const greenHue = Math.max(120, 217 - commitsToday * 15);
     const commitColor = `rgb(${redHue}, ${greenHue}, 225)`;
 
-    // Now, you can target the specific square by determining the row (week) and column (day)
-    const targetWeek = Math.floor(dayIndex / 7);  // Which week the square falls in
-    const targetDay = dayIndex % 7;  // Which day in the week it is
-
     const targetSquareRef = useRef(null);
 
     const formattedDate = now.toISOString().split("T")[0]; // "YYYY-MM-DD"
@@ -160,6 +228,21 @@ export const Commits = ({ user }) => {
         const dropdown = document.getElementById("dropdownMenu");
         dropdown.style.display = (dropdown.style.display === "block") ? "none" : "block";
       };
+
+      const toggleFriends = (e) => {
+        e.stopPropagation(); // Prevent event from bubbling up
+        const dropdown = document.getElementById("friendsMenu");
+        const overlay = document.getElementById("overlay");
+        if (dropdown) {
+            const isVisible = dropdown.style.display === "block";
+            dropdown.style.display = isVisible ? "none" : "block";
+            overlay.style.display = isVisible ? "none" : "block";
+        }
+
+        toggleDropdown();
+      };
+
+
       
     
     return (
@@ -167,7 +250,7 @@ export const Commits = ({ user }) => {
             <div className="user-greeting">
                 <div className="welcome">
                     <h2>welcome,</h2>
-                    <h2 className="name">pranav.</h2>
+                    <h2 className="name">{firstName}</h2>
                 </div>
                 <div className="day">
                     {currentDate}
@@ -183,13 +266,53 @@ export const Commits = ({ user }) => {
                         <p className="commit-number">{commitsToday} commits</p>
                         <hr />
                         <div className="admin">
-                            
                             <button className="log-out" onClick={handleSignOut}>Sign Out</button>
-                            <img src="add friends.png" alt="friends" className="friends"/>
+                            <img src="add friends.png" alt="friends" className="friends" onClick={toggleFriends}/>
+                            
                             <img src="settings.png" alt="settings" className="settings"/>
                             
                         </div>
                     </div>
+                    <div id="overlay" className="overlay"></div>
+                    <div className="friends-content" id="friendsMenu">
+                        <div className="friends-content-top">
+                            <p className="friends-title">friends</p>
+                            <div className="all-or-pending">
+                                <button>All</button>
+                                <button>Pending</button>
+                            </div>
+                        </div>
+                        <div className="friends-list">
+                            <div className="friend-profile">
+                                <img src="/IMG_3813.jpg" alt="" className="friend-pic"/>
+                                <p className="friend-name">Pranav Patnaik</p>
+                            </div>
+                            <div className="friend-profile">
+                                <img src="/IMG_3813.jpg" alt="" className="friend-pic"/>
+                                <p className="friend-name">Pranav Patnaik</p>
+                            </div>
+                            <div className="friend-profile">
+                                <img src="/IMG_3813.jpg" alt="" className="friend-pic"/>
+                                <p className="friend-name">Pranav Patnaik</p>
+                            </div>
+                            <div className="friend-profile">
+                                <img src="/IMG_3813.jpg" alt="" className="friend-pic"/>
+                                <p className="friend-name">Pranav Patnaik</p>
+                            </div>
+                            <div className="friend-profile">
+                                <img src="/IMG_3813.jpg" alt="" className="friend-pic"/>
+                                <p className="friend-name">Pranav Patnaik</p>
+                            </div>
+                            <div className="friend-profile">
+                                <img src="/IMG_3813.jpg" alt="" className="friend-pic"/>
+                                <p className="friend-name">Pranav Patnaik</p>
+                            </div>
+                        </div>
+                        <div className="invite-friends">
+                            <input type="text" className="friend-input" placeholder="Invite friends (@username)" />
+                        </div>
+                    </div>
+
                 </div>
             </div>
             

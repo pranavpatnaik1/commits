@@ -50,6 +50,7 @@ export const Home = () => {
             </nav>
             <div className="home-container">
                 <h2 className="commit-slogan">It's time to <i>commit.</i></h2>
+                <p className="commit-subtitle">Reach your goals, <span className="underline-animation">one commit at a time.</span></p>
                 <button className="start-now-btn" onClick={() => navigate('/signup')}>start now</button>
                 <div className="grid-container">
                     {commitWeeks.map((_, weekIndex) => (
