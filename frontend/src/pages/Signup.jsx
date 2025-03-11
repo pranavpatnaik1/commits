@@ -16,50 +16,64 @@ export const Signup = ({user}) => {
     const navigate = useNavigate();
 
     useEffect(() => {
+        // Quick check first
+        if (!user?.uid) return;
+
         const checkSignUpStatus = async () => {
-            if (user?.uid) {
+            try {
                 const userRef = doc(db, "users", user.uid);
                 const docSnap = await getDoc(userRef);
-                if (docSnap.exists()) {
-                    setSignUpConfirmed(docSnap.data().signUpConfirm);
+                
+                if (docSnap.exists() && docSnap.data().signUpConfirm) {
+                    // Navigate immediately if confirmed
+                    navigate('/app', { replace: true });
                 }
+            } catch (error) {
+                console.error("Error checking signup status:", error);
             }
         };
+
+        // Run check immediately
         checkSignUpStatus();
-    }, [user]);
+    }, [user, navigate]);
 
-    if (user?.uid && signUpConfirmed) {
-        return <Navigate to='/app' />;
-    }
-
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (!email || !password) return;
 
-        createUserWithEmailAndPassword(auth, email, password)
-            .then(async (userCredential) => {
-                const user = userCredential.user;
-                const userRef = doc(db, "users", user.uid);
-                await setDoc(userRef, {
-                    name: full_name,
-                    username: username,
-                    email: user.email,
-                    createdAt: serverTimestamp(),
-                    commits_master: {},
-                    friends: [],
-                    requests: {
-                        pending_requests: [],
-                        incoming_requests: []
-                    },
-                    signUpConfirm: false,
-                    pfp: "",
-                });
-                console.log("User data saved to Firestore");
-                navigate('/profile');
-            })
-            .catch((error) => {
-                console.log(error.code, error.message);
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+            const userRef = doc(db, "users", user.uid);
+            
+            await setDoc(userRef, {
+                name: full_name,
+                username: username,
+                email: user.email,
+                createdAt: serverTimestamp(),
+                commits_master: {},
+                commitCounts: {},
+                totalCommits: 0,
+                dailyCommits: 0,
+                weeklyCommits: 0,
+                monthlyCommits: 0,
+                lastReset: new Date().toISOString().split('T')[0],
+                lastWeeklyReset: new Date().toISOString().split('T')[0],
+                lastMonthlyReset: new Date().toISOString().split('T')[0],
+                friends: [],
+                requests: {
+                    pending_requests: [],
+                    incoming_requests: []
+                },
+                signUpConfirm: false,
+                pfp: "",
             });
+
+            // Use replace to allow proper back navigation
+            navigate('/profile', { replace: true });
+        } catch (error) {
+            console.error("Signup error:", error.code, error.message);
+        }
     };
 
     return (

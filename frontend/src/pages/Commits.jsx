@@ -20,6 +20,9 @@ export const Commits = ({ user }) => {
     const [profilePic, setProfilePic] = useState('/blue default pfp.png');
     const [activeView, setActiveView] = useState('all');
     const [pendingRequests, setPendingRequests] = useState([]);
+    const [friendsList, setFriendsList] = useState([]);
+    const [leaderboardView, setLeaderboardView] = useState('day'); // 'day', 'week', 'month', 'all'
+    const [leaderboardData, setLeaderboardData] = useState([]);
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -203,6 +206,150 @@ export const Commits = ({ user }) => {
         fetchPendingRequests();
     }, [userData]);
 
+    useEffect(() => {
+        const fetchFriends = async () => {
+            if (!userData?.friends) {
+                console.log("No friends data available");
+                return;
+            }
+    
+            try {
+                const friendsPromises = userData.friends.map(async (username) => {
+                    const usersRef = collection(db, "users");
+                    const q = query(usersRef, where("username", "==", username));
+                    const querySnapshot = await getDocs(q);
+                    
+                    if (!querySnapshot.empty) {
+                        return querySnapshot.docs[0].data();
+                    }
+                    return null;
+                });
+    
+                const results = await Promise.all(friendsPromises);
+                const validFriends = results.filter(friend => friend !== null);
+                setFriendsList(validFriends);
+            } catch (error) {
+                console.error("Error fetching friends:", error);
+            }
+        };
+    
+        fetchFriends();
+    }, [userData]);
+
+    // Add this useEffect near your other useEffects
+    useEffect(() => {
+        const resetDailyCounts = async () => {
+            const now = new Date();
+            const yesterday = new Date(now);
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+            // Only reset if last reset was yesterday or earlier
+            if (userData?.lastReset !== yesterdayStr) {
+                const userRef = doc(db, "users", user.uid);
+                try {
+                    await updateDoc(userRef, {
+                        dailyCommits: 0,
+                        lastReset: now.toISOString().split('T')[0]
+                    });
+                } catch (error) {
+                    console.error("Error resetting daily counts:", error);
+                }
+            }
+        };
+
+        resetDailyCounts();
+    }, [userData?.lastReset, user.uid]);
+
+    useEffect(() => {
+        const resetPeriodicalCounts = async () => {
+            const now = new Date();
+            const userRef = doc(db, "users", user.uid);
+
+            try {
+                // Check if we need to reset weekly counts
+                if (now.getDay() === 0 && userData?.lastWeeklyReset !== now.toISOString().split('T')[0]) {
+                    await updateDoc(userRef, {
+                        weeklyCommits: 0,
+                        lastWeeklyReset: now.toISOString().split('T')[0]
+                    });
+                }
+
+                // Check if we need to reset monthly counts
+                if (now.getDate() === 1 && userData?.lastMonthlyReset !== now.toISOString().split('T')[0]) {
+                    await updateDoc(userRef, {
+                        monthlyCommits: 0,
+                        lastMonthlyReset: now.toISOString().split('T')[0]
+                    });
+                }
+            } catch (error) {
+                console.error("Error resetting periodical counts:", error);
+            }
+        };
+
+        resetPeriodicalCounts();
+    }, [userData, user.uid]);
+
+    useEffect(() => {
+        const fetchLeaderboardData = async () => {
+            try {
+                // Get all friends' data including current user
+                const usersRef = collection(db, "users");
+                let usernames = [...(userData?.friends || [])];
+                
+                // Always include current user
+                if (userData?.username) {
+                    usernames.push(userData.username);
+                }
+
+                if (usernames.length === 0) return;
+
+                // Get fresh data for all users
+                const q = query(usersRef, where("username", "in", usernames));
+                const querySnapshot = await getDocs(q);
+                
+                // Get today's date for filtering daily commits
+                const today = new Date().toISOString().split('T')[0];
+                
+                const results = querySnapshot.docs.map(doc => {
+                    const userData = doc.data();
+                    // Calculate daily commits from commitCounts if viewing by day
+                    if (leaderboardView === 'day') {
+                        const todayCommits = userData.commitCounts?.[today] || 0;
+                        return {
+                            ...userData,
+                            dailyCommits: todayCommits
+                        };
+                    }
+                    return userData;
+                });
+
+                // Sort based on selected view
+                const sortedResults = results.sort((a, b) => {
+                    switch(leaderboardView) {
+                        case 'day':
+                            return (b.dailyCommits || 0) - (a.dailyCommits || 0);
+                        case 'week':
+                            return (b.weeklyCommits || 0) - (a.weeklyCommits || 0);
+                        case 'month':
+                            return (b.monthlyCommits || 0) - (a.monthlyCommits || 0);
+                        case 'all':
+                            return (b.totalCommits || 0) - (a.totalCommits || 0);
+                        default:
+                            return 0;
+                    }
+                });
+
+                console.log("Updated leaderboard data:", sortedResults);
+                setLeaderboardData(sortedResults);
+            } catch (error) {
+                console.error("Error fetching leaderboard data:", error);
+            }
+        };
+
+        fetchLeaderboardData();
+    }, [userData, leaderboardView, recentCommits]); // Added recentCommits as dependency
+
     // LOGIN DETAILS
 
     if (!user) {
@@ -216,26 +363,64 @@ export const Commits = ({ user }) => {
     };
 
     const handleCommit = async () => {
-        if (!commitText.trim()) return; // Prevent empty commits
+        if (!commitText.trim()) return;
 
-        const userRef = doc(db, "users", user.uid); // Reference to user's document
+        const userRef = doc(db, "users", user.uid);
         const now = new Date();
-        const formattedDate = now.toISOString().split("T")[0]; // "YYYY-MM-DD"
-        const formattedTime = now.toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit', timeZone: "America/New_York" });
+        const formattedDate = now.toISOString().split("T")[0];
+        const formattedTime = now.toLocaleTimeString("en-US", { 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            timeZone: "America/New_York" 
+        });
 
         try {
             await updateDoc(userRef, {
                 commits_master: arrayUnion({
-                        date: formattedDate,
-                        text: commitText,
-                        timestamp: formattedTime, // Store the current time as ISO string
+                    date: formattedDate,
+                    text: commitText,
+                    timestamp: formattedTime,
                 }),
                 [`commitCounts.${formattedDate}`]: increment(1),
+                'totalCommits': increment(1),
+                'dailyCommits': increment(1),
+                'weeklyCommits': increment(1),
+                'monthlyCommits': increment(1)
             });
-            console.log("Commit saved to Firestore");
-            setCommitText(""); // Clear input after saving
 
-            fetchCommits();
+            // Update local state
+            const updatedDocSnap = await getDoc(userRef);
+            if (updatedDocSnap.exists()) {
+                setUserData(updatedDocSnap.data());
+                setCommitText("");
+                fetchCommits();
+                
+                // Re-fetch leaderboard data to reflect the new commit
+                const leaderboardQuery = query(
+                    collection(db, "users"),
+                    where("username", "in", [...userData.friends, userData.username])
+                );
+                const querySnapshot = await getDocs(leaderboardQuery);
+                const results = querySnapshot.docs.map(doc => doc.data());
+                
+                // Sort based on current view
+                const sortedResults = results.sort((a, b) => {
+                    switch(leaderboardView) {
+                        case 'day':
+                            return (b.dailyCommits || 0) - (a.dailyCommits || 0);
+                        case 'week':
+                            return (b.weeklyCommits || 0) - (a.weeklyCommits || 0);
+                        case 'month':
+                            return (b.monthlyCommits || 0) - (a.monthlyCommits || 0);
+                        case 'all':
+                            return (b.totalCommits || 0) - (a.totalCommits || 0);
+                        default:
+                            return 0;
+                    }
+                });
+                
+                setLeaderboardData(sortedResults);
+            }
         } catch (error) {
             console.error("Error saving commit:", error);
         }
@@ -255,19 +440,32 @@ export const Commits = ({ user }) => {
             if (docSnap.exists()) {
                 const userData = docSnap.data();
                 if (userData.commits_master) {
-                    // Convert to array if it's not already one
+                    // Sort commits by date and time in reverse chronological order
                     const commits = Array.isArray(userData.commits_master) 
                         ? userData.commits_master 
                         : Object.values(userData.commits_master);
-                    setRecentCommits(commits);
+                    
+                    const sortedCommits = commits.sort((a, b) => {
+                        // Compare dates first
+                        const dateComparison = new Date(b.date) - new Date(a.date);
+                        if (dateComparison !== 0) return dateComparison;
+                        
+                        // If same date, compare times
+                        return b.timestamp.localeCompare(a.timestamp);
+                    });
+
+                    setRecentCommits(sortedCommits);
                 } else {
-                    setRecentCommits([]); // Initialize as empty array if no commits exist
+                    setRecentCommits([]);
                 }
+                
+                // Also update commit counts
                 if (userData.commitCounts) {
                     setCommitCounts(userData.commitCounts);
                 }
             } else {
                 console.log("No such document!");
+                setRecentCommits([]);
             }
         } catch (error) {
             console.error("Error getting document:", error);
@@ -457,6 +655,10 @@ export const Commits = ({ user }) => {
             console.error("Error declining friend request:", error);
         }
     };
+
+    const handleLeaderboardToggle = (view) => {
+        setLeaderboardView(view);
+    };
       
     
     return (
@@ -484,7 +686,6 @@ export const Commits = ({ user }) => {
                             <img src="add friends.png" alt="friends" className="friends" onClick={toggleFriends}/>
                             
                             <img src="settings.png" alt="settings" className="settings"/>
-                            
                         </div>
                     </div>
                     <div id="overlay" className="overlay"></div>
@@ -509,16 +710,33 @@ export const Commits = ({ user }) => {
                         </div>
                         <div className="friends-list">
                             {activeView === 'all' ? (
-                                // All friends view
-                                <>
-                                    <div className="friend-profile">
-                                        <img src="/IMG_3813.jpg" alt="" className="friend-pic"/>
-                                        <div>
-                                            <p className="friend-name">Pranav Patnaik <span className="friend-username">(@pranavpatnaik_)</span></p>
-                                            <p className="friend-commits">3 commits</p>
+                                friendsList.length > 0 ? (
+                                    friendsList.map((friend, index) => (
+                                        <div key={index} className="friend-profile">
+                                            <img 
+                                                src={friend.pfp || '/blue default pfp.png'} 
+                                                alt="" 
+                                                className="friend-pic"
+                                            />
+                                            <div>
+                                                <p className="friend-name">
+                                                    {friend.name} 
+                                                    <span className="friend-username">(@{friend.username})</span>
+                                                </p>
+                                                <p className="friend-commits">2 commits</p>
+                                            </div>
                                         </div>
+                                    ))
+                                ) : (
+                                    <div className="friend-profile" style={{ 
+                                        justifyContent: 'center', 
+                                        color: '#1479BC', 
+                                        opacity: 0.7, 
+                                        fontStyle: 'italic' 
+                                    }}>
+                                        No friends added yet
                                     </div>
-                                </>
+                                )
                             ) : (
                                 // Pending requests view - now shows both incoming and outgoing
                                 pendingRequests.length > 0 ? (
@@ -656,11 +874,65 @@ export const Commits = ({ user }) => {
                 </div>
 
                 <div className="leaderboard">
-                    <p className="leaderboard-title"><u>leaderboard</u></p>
-                    <div className="leaderboard-box">
-
+    <p className="leaderboard-title"><u>leaderboard</u></p>
+    <div className="leaderboard-box">
+        <div className="leaderboard-content-top">
+            <div className="leaderboard-toggle">
+                <button 
+                    className={`toggle-btn ${leaderboardView === 'day' ? 'active' : ''}`}
+                    onClick={() => handleLeaderboardToggle('day')}
+                >
+                    Day
+                </button>
+                <p className="divider">|</p>
+                <button 
+                    className={`toggle-btn ${leaderboardView === 'week' ? 'active' : ''}`}
+                    onClick={() => handleLeaderboardToggle('week')}
+                >
+                    Week
+                </button>
+                <p className="divider">|</p>
+                <button 
+                    className={`toggle-btn ${leaderboardView === 'month' ? 'active' : ''}`}
+                    onClick={() => handleLeaderboardToggle('month')}
+                >
+                    Month
+                </button>
+                <p className="divider">|</p>
+                <button 
+                    className={`toggle-btn ${leaderboardView === 'all' ? 'active' : ''}`}
+                    onClick={() => handleLeaderboardToggle('all')}
+                >
+                    All-Time
+                </button>
+            </div>
+        </div>
+        <div className="leaderboard-entries">
+            {leaderboardData.map((user, index) => (
+                <div key={index} className="friend-profile">
+                    <img 
+                        src={user.pfp || '/blue default pfp.png'} 
+                        alt="" 
+                        className="friend-pic"
+                    />
+                    <div>
+                        <p className="friend-name">
+                            {user.name}
+                            <span className="friend-username">(@{user.username})</span>
+                        </p>
+                        <p className="friend-commits">
+                            {leaderboardView === 'day' ? user.dailyCommits || 0 :
+                             leaderboardView === 'week' ? user.weeklyCommits || 0 :
+                             leaderboardView === 'month' ? user.monthlyCommits || 0 :
+                             user.totalCommits || 0} commits
+                        </p>
                     </div>
                 </div>
+            ))}
+        </div>
+    </div>
+</div>
+
             </div>
 
             <div className="committer">
