@@ -39,8 +39,14 @@ function App() {
   }, []);
 
   if (isFetching) {
-    return <h2>Loading...</h2> 
-    // FIX THIS WITH A COOL LOADING SCREEN ANIM
+    return (
+    <>
+      <div className="uploading"></div>
+      <div className="upload-overlay">
+        <div className="spinner"></div>
+      </div>
+    </>
+    )
   }
 
   return (

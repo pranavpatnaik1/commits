@@ -18,6 +18,8 @@ export const Commits = ({ user }) => {
     const [userData, setUserData] = useState(null);
     const [friendUsername, setFriendUsername] = useState("");
     const [profilePic, setProfilePic] = useState('/blue default pfp.png');
+    const [activeView, setActiveView] = useState('all');
+    const [pendingRequests, setPendingRequests] = useState([]);
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -147,6 +149,60 @@ export const Commits = ({ user }) => {
         };
     }, []); 
 
+    useEffect(() => {
+        const fetchPendingRequests = async () => {
+            if (!userData?.requests) {
+                console.log("No requests data available");
+                return;
+            }
+    
+            const requests = [];
+            
+            try {
+                // Fetch incoming requests
+                const incomingPromises = (userData.requests.incoming_requests || []).map(async (username) => {
+                    const usersRef = collection(db, "users");
+                    const q = query(usersRef, where("username", "==", username));
+                    const querySnapshot = await getDocs(q);
+                    
+                    if (!querySnapshot.empty) {
+                        return {
+                            ...querySnapshot.docs[0].data(),
+                            requestType: 'incoming'
+                        };
+                    }
+                    return null;
+                });
+    
+                // Fetch outgoing/pending requests
+                const outgoingPromises = (userData.requests.pending_requests || []).map(async (username) => {
+                    const usersRef = collection(db, "users");
+                    const q = query(usersRef, where("username", "==", username));
+                    const querySnapshot = await getDocs(q);
+                    
+                    if (!querySnapshot.empty) {
+                        return {
+                            ...querySnapshot.docs[0].data(),
+                            requestType: 'outgoing'
+                        };
+                    }
+                    return null;
+                });
+    
+                // Wait for all requests to complete and filter out any null results
+                const results = await Promise.all([...incomingPromises, ...outgoingPromises]);
+                const validResults = results.filter(result => result !== null);
+    
+                console.log("Fetched pending requests:", validResults);
+                setPendingRequests(validResults);
+            } catch (error) {
+                console.error("Error fetching pending requests:", error);
+            }
+        };
+    
+        fetchPendingRequests();
+    }, [userData]);
+
     // LOGIN DETAILS
 
     if (!user) {
@@ -267,11 +323,9 @@ export const Commits = ({ user }) => {
         e.preventDefault();
         if (!friendUsername.trim()) return;
     
-        // Remove @ symbol if present
         const cleanUsername = friendUsername.replace('@', '');
         
         try {
-            // 1. Query all users to find the target user
             const usersRef = collection(db, "users");
             const q = query(usersRef, where("username", "==", cleanUsername));
             const querySnapshot = await getDocs(q);
@@ -281,10 +335,7 @@ export const Commits = ({ user }) => {
                 return;
             }
     
-            // 2. Get the target user's document
             const targetUserDoc = querySnapshot.docs[0];
-            
-            // 3. Update both users' requests lists
             const batch = writeBatch(db);
     
             // Update current user's pending_requests
@@ -298,17 +349,73 @@ export const Commits = ({ user }) => {
                 "requests.incoming_requests": arrayUnion(userData.username)
             });
     
-            // Commit both updates
             await batch.commit();
     
-            console.log("Friend request sent successfully");
-            setFriendUsername(""); // Clear input after sending
+            // Clear input field immediately
+            setFriendUsername('');
+    
+            // Update UI
+            const updatedUserRef = doc(db, "users", user.uid);
+            const updatedDocSnap = await getDoc(updatedUserRef);
+            if (updatedDocSnap.exists()) {
+                setUserData(updatedDocSnap.data());
+                fetchPendingRequests();
+            }
+
+    
         } catch (error) {
             console.error("Error sending friend request:", error);
         }
     };
 
+    const handleViewToggle = (view) => {
+        setActiveView(view);
+    };
 
+    // Add this near your other handler functions
+    const handleAcceptRequest = async (request) => {
+        try {
+            const batch = writeBatch(db);
+            
+            // Get references to both users
+            const currentUserRef = doc(db, "users", user.uid);
+            const usersRef = collection(db, "users");
+            const q = query(usersRef, where("username", "==", request.username));
+            const querySnapshot = await getDocs(q);
+            
+            if (!querySnapshot.empty) {
+                const otherUserRef = querySnapshot.docs[0].ref;
+
+                // Add each user to the other's friends list and remove from requests
+                batch.update(currentUserRef, {
+                    friends: arrayUnion(request.username),
+                    "requests.incoming_requests": userData.requests.incoming_requests.filter(
+                        username => username !== request.username
+                    )
+                });
+
+                batch.update(otherUserRef, {
+                    friends: arrayUnion(userData.username),
+                    "requests.pending_requests": request.requests.pending_requests.filter(
+                        username => username !== userData.username
+                    )
+                });
+
+                await batch.commit();
+                console.log("Friend request accepted successfully");
+
+                // Update local state
+                const updatedDocSnap = await getDoc(currentUserRef);
+                if (updatedDocSnap.exists()) {
+                    setUserData(updatedDocSnap.data());
+                    // Re-fetch pending requests to update UI
+                    await fetchPendingRequests();
+                }
+            }
+        } catch (error) {
+            console.error("Error accepting friend request:", error);
+        }
+    };
       
     
     return (
@@ -344,54 +451,103 @@ export const Commits = ({ user }) => {
                         <div className="friends-content-top">
                             <p className="friends-title"><span className="underline-animation">friends</span></p>
                             <div className="all-or-pending">
-                                <button>All</button>
+                                <button 
+                                    onClick={() => handleViewToggle('all')}
+                                    style={{ backgroundColor: activeView === 'all' ? '#b8e0f7' : 'white' }}
+                                >
+                                    All
+                                </button>
                                 <p className="divider">|</p>
-                                <button>Pending</button>
+                                <button 
+                                    onClick={() => handleViewToggle('pending')}
+                                    style={{ backgroundColor: activeView === 'pending' ? '#b8e0f7' : 'white' }}
+                                >
+                                    Pending
+                                </button>
                             </div>
                         </div>
                         <div className="friends-list">
-                            <div className="friend-profile">
-                                <img src="/IMG_3813.jpg" alt="" className="friend-pic"/>
-                                <div>
-                                    <p className="friend-name">Pranav Patnaik <span className="friend-username">(@pranavpatnaik_)</span></p>
-                                    <p className="friend-commits">3 commits</p>
-                                </div>
-                            </div>
-                            <div className="friend-profile">
-                                <img src="/IMG_3813.jpg" alt="" className="friend-pic"/>
-                                <div>
-                                    <p className="friend-name">Pranav Patnaik <span className="friend-username">(@pranavpatnaik_)</span></p>
-                                    <p className="friend-commits">3 commits</p>
-                                </div>
-                            </div>
-                            <div className="friend-profile">
-                                <img src="/IMG_3813.jpg" alt="" className="friend-pic"/>
-                                <div>
-                                    <p className="friend-name">Pranav Patnaik <span className="friend-username">(@pranavpatnaik_)</span></p>
-                                    <p className="friend-commits">3 commits</p>
-                                </div>
-                            </div>
-                            <div className="friend-profile">
-                                <img src="/IMG_3813.jpg" alt="" className="friend-pic"/>
-                                <div>
-                                    <p className="friend-name">Pranav Patnaik <span className="friend-username">(@pranavpatnaik_)</span></p>
-                                    <p className="friend-commits">3 commits</p>
-                                </div>
-                            </div>
-                            <div className="friend-profile">
-                                <img src="/IMG_3813.jpg" alt="" className="friend-pic"/>
-                                <div>
-                                    <p className="friend-name">Pranav Patnaik <span className="friend-username">(@pranavpatnaik_)</span></p>
-                                    <p className="friend-commits">3 commits</p>
-                                </div>
-                            </div>
-                            <div className="friend-profile">
-                                <img src="/IMG_3813.jpg" alt="" className="friend-pic"/>
-                                <div>
-                                    <p className="friend-name">Pranav Patnaik <span className="friend-username">(@pranavpatnaik_)</span></p>
-                                    <p className="friend-commits">3 commits</p>
-                                </div>
-                            </div>
+                            {activeView === 'all' ? (
+                                // All friends view
+                                <>
+                                    <div className="friend-profile">
+                                        <img src="/IMG_3813.jpg" alt="" className="friend-pic"/>
+                                        <div>
+                                            <p className="friend-name">Pranav Patnaik <span className="friend-username">(@pranavpatnaik_)</span></p>
+                                            <p className="friend-commits">3 commits</p>
+                                        </div>
+                                    </div>
+                                </>
+                            ) : (
+                                // Pending requests view - now shows both incoming and outgoing
+                                pendingRequests.length > 0 ? (
+                                    pendingRequests.map((request, index) => (
+                                        <div key={index} className="friend-profile">
+                                            <img 
+                                                src={request.pfp || '/blue default pfp.png'} 
+                                                alt="" 
+                                                className="friend-pic"
+                                            />
+                                            <div>
+                                                <p className="friend-name">
+                                                    {request.name} 
+                                                    <span className="friend-username">(@{request.username})</span>
+                                                    <span style={{ 
+                                                        fontSize: '12px', 
+                                                        color: request.requestType === 'incoming' ? '#2ecc71' : '#3498db', 
+                                                        marginLeft: '8px',
+                                                        fontStyle: 'italic' 
+                                                    }}>
+                                                        {request.requestType === 'incoming' ? '(Incoming)' : '(Outgoing)'}
+                                                    </span>
+                                                </p>
+                                                <p className="friend-commits">2 commits</p>
+                                                {request.requestType === 'incoming' && (
+                                                    <div className="request-actions">
+                                                        <button 
+                                                            className="accept-button"
+                                                            onClick={() => handleAcceptRequest(request)}
+                                                            style={{
+                                                                padding: '4px 8px',
+                                                                marginRight: '8px',
+                                                                backgroundColor: '#2ecc71',
+                                                                color: 'white',
+                                                                border: 'none',
+                                                                borderRadius: '4px',
+                                                                cursor: 'pointer'
+                                                            }}
+                                                        >
+                                                            Accept
+                                                        </button>
+                                                        <button 
+                                                            className="decline-button"
+                                                            style={{
+                                                                padding: '4px 8px',
+                                                                backgroundColor: '#e74c3c',
+                                                                color: 'white',
+                                                                border: 'none',
+                                                                borderRadius: '4px',
+                                                                cursor: 'pointer'
+                                                            }}
+                                                        >
+                                                            Decline
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="friend-profile" style={{ 
+                                        justifyContent: 'center', 
+                                        color: '#1479BC', 
+                                        opacity: 0.7, 
+                                        fontStyle: 'italic' 
+                                    }}>
+                                        No pending requests
+                                    </div>
+                                )
+                            )}
                         </div>
                         <div className="invite-friends">
                             <form onSubmit={handleFriendRequest}>
@@ -405,10 +561,8 @@ export const Commits = ({ user }) => {
                             </form>
                         </div>
                     </div>
-
                 </div>
             </div>
-            
 
             <div className="commits">
                 <p>march, 2025</p>
