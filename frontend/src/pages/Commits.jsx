@@ -2,8 +2,10 @@ import { signOut } from "firebase/auth";
 import "../assets/style/Commits.css";
 import { auth } from "../firebase";
 import { Navigate } from "react-router-dom";
-import { getFirestore, doc, updateDoc, arrayUnion, setDoc, getDoc, increment } from "firebase/firestore";
+import { getFirestore, doc, updateDoc, arrayUnion, setDoc, getDoc, increment, collection, query, where, getDocs, writeBatch } from "firebase/firestore";
 import React, { useState, useEffect, useRef } from "react";
+import { storage } from "../firebase";
+import { ref, getDownloadURL } from "firebase/storage";
 
 const db = getFirestore();
 
@@ -14,17 +16,36 @@ export const Commits = ({ user }) => {
     const [commitCounts, setCommitCounts] = useState({});
     const [currentTime, setCurrentTime] = useState("");
     const [userData, setUserData] = useState(null);
+    const [friendUsername, setFriendUsername] = useState("");
+    const [profilePic, setProfilePic] = useState('/blue default pfp.png');
 
     useEffect(() => {
         const fetchUserData = async () => {
             if (user?.uid) {
                 const userRef = doc(db, "users", user.uid);
-                const docSnap = await getDoc(userRef);
-                if (docSnap.exists()) {
-                    setUserData(docSnap.data());
+                try {
+                    const docSnap = await getDoc(userRef);
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        setUserData(data);
+
+                        // If user has a pfp URL in their data, use it directly
+                        if (data.pfp) {
+                            setProfilePic(data.pfp);
+                            console.log("Using stored pfp URL:", data.pfp);
+                        } else {
+                            // No profile picture set, use default
+                            console.log("No profile picture found, using default");
+                            setProfilePic('/blue default pfp.png');
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error fetching user data:", error);
+                    setProfilePic('/blue default pfp.png');
                 }
             }
         };
+        
         fetchUserData();
     }, [user]);
 
@@ -242,6 +263,51 @@ export const Commits = ({ user }) => {
         toggleDropdown();
       };
 
+      const handleFriendRequest = async (e) => {
+        e.preventDefault();
+        if (!friendUsername.trim()) return;
+    
+        // Remove @ symbol if present
+        const cleanUsername = friendUsername.replace('@', '');
+        
+        try {
+            // 1. Query all users to find the target user
+            const usersRef = collection(db, "users");
+            const q = query(usersRef, where("username", "==", cleanUsername));
+            const querySnapshot = await getDocs(q);
+    
+            if (querySnapshot.empty) {
+                console.log("User not found");
+                return;
+            }
+    
+            // 2. Get the target user's document
+            const targetUserDoc = querySnapshot.docs[0];
+            
+            // 3. Update both users' requests lists
+            const batch = writeBatch(db);
+    
+            // Update current user's pending_requests
+            const currentUserRef = doc(db, "users", user.uid);
+            batch.update(currentUserRef, {
+                "requests.pending_requests": arrayUnion(cleanUsername)
+            });
+    
+            // Update target user's incoming_requests
+            batch.update(targetUserDoc.ref, {
+                "requests.incoming_requests": arrayUnion(userData.username)
+            });
+    
+            // Commit both updates
+            await batch.commit();
+    
+            console.log("Friend request sent successfully");
+            setFriendUsername(""); // Clear input after sending
+        } catch (error) {
+            console.error("Error sending friend request:", error);
+        }
+    };
+
 
       
     
@@ -259,7 +325,7 @@ export const Commits = ({ user }) => {
                     {currentTime}
                 </div>
                 <div className="profile">
-                    <img src="/IMG_3813.jpg" alt="" className='profile-pic' onClick={toggleDropdown}/>
+                    <img src={profilePic} alt="" className='profile-pic' onClick={toggleDropdown}/>
                     <div className="dropdown-content" id="dropdownMenu">
                         <h2 className="user-official-name">Pranav Patnaik</h2>
                         <p className="username">@pranavpatnaik_</p>
@@ -276,40 +342,67 @@ export const Commits = ({ user }) => {
                     <div id="overlay" className="overlay"></div>
                     <div className="friends-content" id="friendsMenu">
                         <div className="friends-content-top">
-                            <p className="friends-title">friends</p>
+                            <p className="friends-title"><span className="underline-animation">friends</span></p>
                             <div className="all-or-pending">
                                 <button>All</button>
+                                <p className="divider">|</p>
                                 <button>Pending</button>
                             </div>
                         </div>
                         <div className="friends-list">
                             <div className="friend-profile">
                                 <img src="/IMG_3813.jpg" alt="" className="friend-pic"/>
-                                <p className="friend-name">Pranav Patnaik</p>
+                                <div>
+                                    <p className="friend-name">Pranav Patnaik <span className="friend-username">(@pranavpatnaik_)</span></p>
+                                    <p className="friend-commits">3 commits</p>
+                                </div>
                             </div>
                             <div className="friend-profile">
                                 <img src="/IMG_3813.jpg" alt="" className="friend-pic"/>
-                                <p className="friend-name">Pranav Patnaik</p>
+                                <div>
+                                    <p className="friend-name">Pranav Patnaik <span className="friend-username">(@pranavpatnaik_)</span></p>
+                                    <p className="friend-commits">3 commits</p>
+                                </div>
                             </div>
                             <div className="friend-profile">
                                 <img src="/IMG_3813.jpg" alt="" className="friend-pic"/>
-                                <p className="friend-name">Pranav Patnaik</p>
+                                <div>
+                                    <p className="friend-name">Pranav Patnaik <span className="friend-username">(@pranavpatnaik_)</span></p>
+                                    <p className="friend-commits">3 commits</p>
+                                </div>
                             </div>
                             <div className="friend-profile">
                                 <img src="/IMG_3813.jpg" alt="" className="friend-pic"/>
-                                <p className="friend-name">Pranav Patnaik</p>
+                                <div>
+                                    <p className="friend-name">Pranav Patnaik <span className="friend-username">(@pranavpatnaik_)</span></p>
+                                    <p className="friend-commits">3 commits</p>
+                                </div>
                             </div>
                             <div className="friend-profile">
                                 <img src="/IMG_3813.jpg" alt="" className="friend-pic"/>
-                                <p className="friend-name">Pranav Patnaik</p>
+                                <div>
+                                    <p className="friend-name">Pranav Patnaik <span className="friend-username">(@pranavpatnaik_)</span></p>
+                                    <p className="friend-commits">3 commits</p>
+                                </div>
                             </div>
                             <div className="friend-profile">
                                 <img src="/IMG_3813.jpg" alt="" className="friend-pic"/>
-                                <p className="friend-name">Pranav Patnaik</p>
+                                <div>
+                                    <p className="friend-name">Pranav Patnaik <span className="friend-username">(@pranavpatnaik_)</span></p>
+                                    <p className="friend-commits">3 commits</p>
+                                </div>
                             </div>
                         </div>
                         <div className="invite-friends">
-                            <input type="text" className="friend-input" placeholder="Invite friends (@username)" />
+                            <form onSubmit={handleFriendRequest}>
+                                <input 
+                                    type="text" 
+                                    className="friend-input" 
+                                    placeholder="Invite friends (@username)" 
+                                    value={friendUsername}
+                                    onChange={(e) => setFriendUsername(e.target.value)}
+                                />
+                            </form>
                         </div>
                     </div>
 

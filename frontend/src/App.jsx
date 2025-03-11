@@ -4,6 +4,7 @@ import { Home } from "./pages/Home.jsx";
 import { Login } from "./pages/Login.jsx";
 import { Commits } from "./pages/Commits.jsx";
 import { Signup } from "./pages/Signup.jsx";
+import { Profile } from "./pages/Profile.jsx";
 import { onAuthStateChanged } from "firebase/auth";
 import "./App.css";
 import { auth } from "./firebase.js";
@@ -39,6 +40,7 @@ function App() {
 
   if (isFetching) {
     return <h2>Loading...</h2> 
+    // FIX THIS WITH A COOL LOADING SCREEN ANIM
   }
 
   return (
@@ -47,6 +49,7 @@ function App() {
         <Route path='/' element={<Home />} />
         <Route path='/login' element={<Login user={user} />} />
         <Route path='/signup' element={<Signup user={user} />} />
+        <Route path='/profile' element={<Profile user={user} />} />
         <Route 
           path='/app' 
           element={

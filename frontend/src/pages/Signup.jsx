@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase";
 import { Navigate, useNavigate } from "react-router-dom";
-import { getFirestore, doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { getFirestore, doc, setDoc, serverTimestamp, getDoc } from "firebase/firestore";
 import "../assets/style/Signup.css";
 
 const db = getFirestore();
@@ -12,9 +12,23 @@ export const Signup = ({user}) => {
     const [password, setPassword] = useState("");
     const [full_name, setName] = useState("");
     const [username, setUsername] = useState("");
+    const [signUpConfirmed, setSignUpConfirmed] = useState(false);
     const navigate = useNavigate();
 
-    if (user?.uid) {
+    useEffect(() => {
+        const checkSignUpStatus = async () => {
+            if (user?.uid) {
+                const userRef = doc(db, "users", user.uid);
+                const docSnap = await getDoc(userRef);
+                if (docSnap.exists()) {
+                    setSignUpConfirmed(docSnap.data().signUpConfirm);
+                }
+            }
+        };
+        checkSignUpStatus();
+    }, [user]);
+
+    if (user?.uid && signUpConfirmed) {
         return <Navigate to='/app' />;
     }
 
@@ -36,9 +50,12 @@ export const Signup = ({user}) => {
                     requests: {
                         pending_requests: [],
                         incoming_requests: []
-                    }
+                    },
+                    signUpConfirm: false,
+                    pfp: "",
                 });
                 console.log("User data saved to Firestore");
+                navigate('/profile');
             })
             .catch((error) => {
                 console.log(error.code, error.message);
