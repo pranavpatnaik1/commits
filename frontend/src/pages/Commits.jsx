@@ -490,7 +490,7 @@ export const Commits = ({ user }) => {
                     <div id="overlay" className="overlay"></div>
                     <div className="friends-content" id="friendsMenu">
                         <div className="friends-content-top">
-                            <p className="friends-title"><span className="underline-animation">friends</span></p>
+                            <p className="friends-title"><span className="friend-underline-animation">friends</span></p>
                             <div className="all-or-pending">
                                 <button 
                                     onClick={() => handleViewToggle('all')}

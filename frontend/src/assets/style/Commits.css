@@ -664,12 +664,12 @@ body {
     }
 }
 
-.underline-animation {
+.friend-underline-animation {
     position: relative;
     display: inline-block;
 }
 
-.underline-animation::after {
+.friend-underline-animation::after {
     content: '';
     position: absolute;
     left: 2px;
