@@ -416,6 +416,47 @@ export const Commits = ({ user }) => {
             console.error("Error accepting friend request:", error);
         }
     };
+
+    const handleDeclineRequest = async (request) => {
+        try {
+            const batch = writeBatch(db);
+            
+            // Get references to both users
+            const currentUserRef = doc(db, "users", user.uid);
+            const usersRef = collection(db, "users");
+            const q = query(usersRef, where("username", "==", request.username));
+            const querySnapshot = await getDocs(q);
+            
+            if (!querySnapshot.empty) {
+                const otherUserRef = querySnapshot.docs[0].ref;
+
+                // Remove request from both users' lists
+                batch.update(currentUserRef, {
+                    "requests.incoming_requests": userData.requests.incoming_requests.filter(
+                        username => username !== request.username
+                    )
+                });
+
+                batch.update(otherUserRef, {
+                    "requests.pending_requests": request.requests.pending_requests.filter(
+                        username => username !== userData.username
+                    )
+                });
+
+                await batch.commit();
+                console.log("Friend request declined");
+
+                // Update local state immediately
+                const updatedDocSnap = await getDoc(currentUserRef);
+                if (updatedDocSnap.exists()) {
+                    setUserData(updatedDocSnap.data());
+                    await fetchPendingRequests();
+                }
+            }
+        } catch (error) {
+            console.error("Error declining friend request:", error);
+        }
+    };
       
     
     return (
@@ -521,6 +562,7 @@ export const Commits = ({ user }) => {
                                                         </button>
                                                         <button 
                                                             className="decline-button"
+                                                            onClick={() => handleDeclineRequest(request)}
                                                             style={{
                                                                 padding: '4px 8px',
                                                                 backgroundColor: '#e74c3c',
