@@ -36,7 +36,15 @@ export const Commits = ({ user }) => {
     const [leaderboardView, setLeaderboardView] = useState('day');
     const [leaderboardData, setLeaderboardData] = useState([]);
     const [showLengthError, setShowLengthError] = useState(false);
-    const [profilePic, setProfilePic] = useState('/blue default pfp.png');
+    const [profilePic, setProfilePic] = useState(null); // Change from default to null
+    const [defaultPics] = useState([
+        "/blue default pfp.png",
+        "/yellow default pfp.png",
+        "/green default pfp.png",
+        "/orange default pfp.png",
+        "/purple default pfp.png",
+        "/red default pfp.png"
+    ]);
     const [friendsList, setFriendsList] = useState([]);
     const [pendingRequests, setPendingRequests] = useState([]);
     const [friendUsername, setFriendUsername] = useState('');
@@ -55,14 +63,13 @@ export const Commits = ({ user }) => {
                         const data = docSnap.data();
                         setUserData(data);
 
-                        // If user has a pfp URL in their data, use it directly
+                        // Handle profile picture
                         if (data.pfp) {
                             setProfilePic(data.pfp);
-                            console.log("Using stored pfp URL:", data.pfp);
+                            console.log("Setting profile picture to:", data.pfp);
                         } else {
-                            // No profile picture set, use default
-                            console.log("No profile picture found, using default");
                             setProfilePic('/blue default pfp.png');
+                            console.log("No profile picture found, using default");
                         }
                     }
                 } catch (error) {
@@ -73,7 +80,7 @@ export const Commits = ({ user }) => {
         };
         
         fetchUserData();
-    }, [user]);
+    }, [user]); // Remove defaultPics from dependencies
 
     const firstName = userData?.name ? userData.name.split(' ')[0].toLowerCase() : '';
     const fullName = userData?.name || 'User';
@@ -860,7 +867,15 @@ export const Commits = ({ user }) => {
             await updateDoc(userRef, {
                 pfp: finalPic
             });
-            setProfilePic(finalPic);
+            
+            setProfilePic(finalPic); // This should trigger a re-render with the new pic
+            console.log("Profile picture updated to:", finalPic);
+            
+            // Force a refresh of userData
+            const updatedDoc = await getDoc(userRef);
+            if (updatedDoc.exists()) {
+                setUserData(updatedDoc.data());
+            }
             
             // Close settings menu
             const settingsMenu = document.getElementById("settingsMenu");
