@@ -2,10 +2,28 @@ import { signOut } from "firebase/auth";
 import "../assets/style/Commits.css";
 import { auth } from "../firebase";
 import { Navigate } from "react-router-dom";
-import { getFirestore, doc, updateDoc, arrayUnion, setDoc, getDoc, increment, collection, query, where, getDocs, writeBatch } from "firebase/firestore";
-import React, { useState, useEffect, useRef } from "react";
+import { 
+    getFirestore, 
+    doc, 
+    updateDoc, 
+    arrayUnion, 
+    getDoc, 
+    increment,
+    collection,
+    query,
+    where,
+    getDocs,
+    writeBatch
+} from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL, deleteObject, listAll } from "firebase/storage";
 import { storage } from "../firebase";
-import { ref, getDownloadURL } from "firebase/storage";
+import React, { useState, useEffect, useRef } from "react";
+import { Header } from '../components/Header';
+import { CommitGrid } from '../components/CommitGrid';
+import { RecentCommits } from '../components/RecentCommits';
+import { Leaderboard } from '../components/Leaderboard';
+import { Friends } from '../components/Friends';
+import { Settings } from '../components/Settings';
 
 const db = getFirestore();
 
@@ -13,16 +31,19 @@ export const Commits = ({ user }) => {
     const [commitText, setCommitText] = useState("");
     const [recentCommits, setRecentCommits] = useState([]);
     const [currentDate, setCurrentDate] = useState("");
-    const [commitCounts, setCommitCounts] = useState({});
     const [currentTime, setCurrentTime] = useState("");
     const [userData, setUserData] = useState(null);
-    const [friendUsername, setFriendUsername] = useState("");
-    const [profilePic, setProfilePic] = useState('/blue default pfp.png');
-    const [activeView, setActiveView] = useState('all');
-    const [pendingRequests, setPendingRequests] = useState([]);
-    const [friendsList, setFriendsList] = useState([]);
-    const [leaderboardView, setLeaderboardView] = useState('day'); // 'day', 'week', 'month', 'all'
+    const [leaderboardView, setLeaderboardView] = useState('day');
     const [leaderboardData, setLeaderboardData] = useState([]);
+    const [showLengthError, setShowLengthError] = useState(false);
+    const [profilePic, setProfilePic] = useState('/blue default pfp.png');
+    const [friendsList, setFriendsList] = useState([]);
+    const [pendingRequests, setPendingRequests] = useState([]);
+    const [friendUsername, setFriendUsername] = useState('');
+    const [activeView, setActiveView] = useState('all');
+    const [isUploading, setIsUploading] = useState(false);
+    const [commitCounts, setCommitCounts] = useState({});
+    const MAX_COMMIT_LENGTH = 200;
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -55,12 +76,16 @@ export const Commits = ({ user }) => {
     }, [user]);
 
     const firstName = userData?.name ? userData.name.split(' ')[0].toLowerCase() : '';
+    const fullName = userData?.name || 'User';
 
     // Function to update the date and time
     const updateDateTime = () => {
         const now = new Date();
-        const formattedDate = now.toISOString().split("T")[0]; // "YYYY-MM-DD"
-        const formattedTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); // "HH:MM"
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const formattedDate = `${year}-${month}-${day}`;
+        const formattedTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'}); // "HH:MM"
         
         setCurrentDate(formattedDate);
         setCurrentTime(formattedTime);
@@ -364,23 +389,46 @@ export const Commits = ({ user }) => {
 
     const handleCommit = async () => {
         if (!commitText.trim()) return;
+        
+        if (commitText.length > MAX_COMMIT_LENGTH) {
+            setShowLengthError(true);
+            setTimeout(() => setShowLengthError(false), 3000);
+            return;
+        }
 
-        const userRef = doc(db, "users", user.uid);
         const now = new Date();
         const formattedDate = now.toISOString().split("T")[0];
-        const formattedTime = now.toLocaleTimeString("en-US", { 
+        const uniqueId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        
+        const fullTimestamp = now.toLocaleTimeString("en-US", { 
             hour: '2-digit', 
-            minute: '2-digit', 
-            timeZone: "America/New_York" 
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true
+        });
+        
+        const displayTimestamp = now.toLocaleTimeString("en-US", { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: true
         });
 
         try {
+            const newCommit = {
+                id: uniqueId,
+                date: formattedDate,
+                text: commitText,
+                timestamp: fullTimestamp,
+                displayTime: displayTimestamp,
+                createdAt: Date.now()
+            };
+
+            // Update the recentCommits state immediately
+            setRecentCommits(prevCommits => [newCommit, ...prevCommits]);
+
+            const userRef = doc(db, "users", user.uid);
             await updateDoc(userRef, {
-                commits_master: arrayUnion({
-                    date: formattedDate,
-                    text: commitText,
-                    timestamp: formattedTime,
-                }),
+                commits_master: arrayUnion(newCommit),
                 [`commitCounts.${formattedDate}`]: increment(1),
                 'totalCommits': increment(1),
                 'dailyCommits': increment(1),
@@ -388,39 +436,7 @@ export const Commits = ({ user }) => {
                 'monthlyCommits': increment(1)
             });
 
-            // Update local state
-            const updatedDocSnap = await getDoc(userRef);
-            if (updatedDocSnap.exists()) {
-                setUserData(updatedDocSnap.data());
-                setCommitText("");
-                fetchCommits();
-                
-                // Re-fetch leaderboard data to reflect the new commit
-                const leaderboardQuery = query(
-                    collection(db, "users"),
-                    where("username", "in", [...userData.friends, userData.username])
-                );
-                const querySnapshot = await getDocs(leaderboardQuery);
-                const results = querySnapshot.docs.map(doc => doc.data());
-                
-                // Sort based on current view
-                const sortedResults = results.sort((a, b) => {
-                    switch(leaderboardView) {
-                        case 'day':
-                            return (b.dailyCommits || 0) - (a.dailyCommits || 0);
-                        case 'week':
-                            return (b.weeklyCommits || 0) - (a.weeklyCommits || 0);
-                        case 'month':
-                            return (b.monthlyCommits || 0) - (a.monthlyCommits || 0);
-                        case 'all':
-                            return (b.totalCommits || 0) - (a.totalCommits || 0);
-                        default:
-                            return 0;
-                    }
-                });
-                
-                setLeaderboardData(sortedResults);
-            }
+            setCommitText("");
         } catch (error) {
             console.error("Error saving commit:", error);
         }
@@ -499,25 +515,91 @@ export const Commits = ({ user }) => {
     console.log("Commits Today:", commitsToday);
     console.log("Commit Color:", commitColor);
       
-      const toggleDropdown = () => {
+    const toggleDropdown = () => {
         const dropdown = document.getElementById("dropdownMenu");
-        dropdown.style.display = (dropdown.style.display === "block") ? "none" : "block";
-      };
-
-      const toggleFriends = (e) => {
-        e.stopPropagation(); // Prevent event from bubbling up
-        const dropdown = document.getElementById("friendsMenu");
-        const overlay = document.getElementById("overlay");
-        if (dropdown) {
-            const isVisible = dropdown.style.display === "block";
-            dropdown.style.display = isVisible ? "none" : "block";
-            overlay.style.display = isVisible ? "none" : "block";
+        if (dropdown.classList.contains("show")) {
+            dropdown.classList.remove("show");
+            setTimeout(() => {
+                dropdown.style.visibility = "hidden";
+            }, 200); // Match transition duration
+        } else {
+            dropdown.style.visibility = "visible";
+            requestAnimationFrame(() => {
+                dropdown.classList.add("show");
+            });
         }
+    };
 
-        toggleDropdown();
-      };
+    useEffect(() => {
+        const closeDropdowns = (event) => {
+            const dropdown = document.getElementById("dropdownMenu");
+            const isFriendsClick = event.target.closest('.friends');
+            const isProfileClick = event.target.closest('.profile-pic');
+            const isDropdownClick = event.target.closest('.dropdown-content');
 
-      const handleFriendRequest = async (e) => {
+            // Don't close if clicking on friends icon, profile pic, or within dropdown
+            if (!isProfileClick && !isFriendsClick && !isDropdownClick && dropdown?.classList.contains("show")) {
+                dropdown.classList.remove("show");
+                setTimeout(() => {
+                    dropdown.style.visibility = "hidden";
+                }, 200);
+            }
+        };
+
+        document.addEventListener('mousedown', closeDropdowns);
+        return () => {
+            document.removeEventListener('mousedown', closeDropdowns);
+        };
+    }, []);
+
+    const toggleFriends = (e) => {
+        e.stopPropagation();
+        const friendsMenu = document.getElementById("friendsMenu");
+        const overlay = document.getElementById("overlay");
+        const dropdown = document.getElementById("dropdownMenu");
+        
+        if (friendsMenu) {
+            const isVisible = friendsMenu.style.display === "block";
+            friendsMenu.style.display = isVisible ? "none" : "block";
+            overlay.style.display = isVisible ? "none" : "block";
+            
+            if (dropdown) {
+                dropdown.classList.remove("show");
+                dropdown.style.visibility = "hidden";
+            }
+        }
+    };
+
+    useEffect(() => {
+        const closeDropdowns = (event) => {
+            const dropdown = document.getElementById("dropdownMenu");
+            const friendsMenu = document.getElementById("friendsMenu");
+            const overlay = document.getElementById("overlay");
+            const profilePic = event.target.closest('.profile-pic');
+            const friendsButton = event.target.closest('.friends');
+            
+            // If clicking outside both menus
+            if (!profilePic && !friendsButton && !event.target.closest('.dropdown-content') && !event.target.closest('.friends-content')) {
+                if (friendsMenu) {
+                    friendsMenu.style.display = "none";
+                    overlay.style.display = "none";
+                }
+                if (dropdown?.classList.contains("show")) {
+                    dropdown.classList.remove("show");
+                    setTimeout(() => {
+                        dropdown.style.visibility = "hidden";
+                    }, 200);
+                }
+            }
+        };
+
+        document.addEventListener('mousedown', closeDropdowns);
+        return () => {
+            document.removeEventListener('mousedown', closeDropdowns);
+        };
+    }, []);
+
+    const handleFriendRequest = async (e) => {
         e.preventDefault();
         if (!friendUsername.trim()) return;
     
@@ -637,7 +719,7 @@ export const Commits = ({ user }) => {
 
                 batch.update(otherUserRef, {
                     "requests.pending_requests": request.requests.pending_requests.filter(
-                        username => username !== userData.username
+                        username => userData.username
                     )
                 });
 
@@ -659,294 +741,214 @@ export const Commits = ({ user }) => {
     const handleLeaderboardToggle = (view) => {
         setLeaderboardView(view);
     };
+
+    // Add this helper function near your other utility functions
+    const getCommitColorForDate = (commitCount) => {
+        const redHue = Math.max(20, 217 - commitCount * 30);
+        const greenHue = Math.max(120, 217 - commitCount * 15);
+        return `rgb(${redHue}, ${greenHue}, 225)`;
+    };
+
+    // Add this function near your other toggle functions
+    const toggleSettings = (e) => {
+        e.stopPropagation();
+        const settingsMenu = document.getElementById("settingsMenu");
+        const overlay = document.getElementById("overlay");
+        const dropdown = document.getElementById("dropdownMenu");
+        
+        if (settingsMenu) {
+            const isVisible = settingsMenu.style.display === "block";
+            settingsMenu.style.display = isVisible ? "none" : "block";
+            overlay.style.display = isVisible ? "none" : "block";
+            
+            if (dropdown) {
+                dropdown.classList.remove("show");
+                dropdown.style.visibility = "hidden";
+            }
+        }
+    };
       
+    useEffect(() => {
+        const closeDropdowns = (event) => {
+            const dropdown = document.getElementById("dropdownMenu");
+            const friendsMenu = document.getElementById("friendsMenu");
+            const settingsMenu = document.getElementById("settingsMenu");
+            const overlay = document.getElementById("overlay");
+            const profilePic = event.target.closest('.profile-pic');
+            const friendsButton = event.target.closest('.friends');
+            const settingsButton = event.target.closest('.settings');
+            const settingsContent = event.target.closest('.settings-content');
+            
+            // If clicking outside any menu and not on any trigger buttons
+            if (!profilePic && 
+                !friendsButton && 
+                !settingsButton && 
+                !settingsContent &&
+                !event.target.closest('.dropdown-content') && 
+                !event.target.closest('.friends-content')) {
+                
+                if (friendsMenu) {
+                    friendsMenu.style.display = "none";
+                }
+                if (settingsMenu) {
+                    settingsMenu.style.display = "none";
+                }
+                if (overlay) {
+                    overlay.style.display = "none";
+                }
+                if (dropdown?.classList.contains("show")) {
+                    dropdown.classList.remove("show");
+                    setTimeout(() => {
+                        dropdown.style.visibility = "hidden";
+                    }, 200);
+                }
+            }
+        };
+
+        document.addEventListener('mousedown', closeDropdowns);
+        return () => {
+            document.removeEventListener('mousedown', closeDropdowns);
+        };
+    }, []);
+
+    const handleProfilePictureUpdate = async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+    
+        try {
+            setIsUploading(true);
+            if (!userData?.username) {
+                console.error("Username not found in userData");
+                return;
+            }
+    
+            // Delete existing profile pictures
+            const profilePicsRef = ref(storage, 'profile_pictures');
+            const fileList = await listAll(profilePicsRef);
+            
+            const existingPics = fileList.items.filter(item => 
+                item.name.startsWith(userData.username + '.')
+            );
+    
+            await Promise.all(existingPics.map(pic => deleteObject(pic)));
+    
+            // Upload new picture
+            const fileExtension = file.name.split('.').pop();
+            const storageRef = ref(storage, `profile_pictures/${userData.username}.${fileExtension}`);
+            
+            const snapshot = await uploadBytes(storageRef, file);
+            const downloadURL = await getDownloadURL(snapshot.ref);
+            
+            // Update user document
+            const userRef = doc(db, "users", user.uid);
+            await updateDoc(userRef, {
+                pfp: downloadURL
+            });
+    
+            setProfilePic(downloadURL);
+        } catch (error) {
+            console.error("Error updating profile picture:", error);
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    // Add this function
+    const handleConfirmProfileUpdate = async (finalPic) => {
+        try {
+            const userRef = doc(db, "users", user.uid);
+            await updateDoc(userRef, {
+                pfp: finalPic
+            });
+            setProfilePic(finalPic);
+            
+            // Close settings menu
+            const settingsMenu = document.getElementById("settingsMenu");
+            const overlay = document.getElementById("overlay");
+            if (settingsMenu) {
+                settingsMenu.style.display = "none";
+                overlay.style.display = "none";
+            }
+        } catch (error) {
+            console.error("Error updating profile picture:", error);
+        }
+    };
     
     return (
         <div className="main">
-            <div className="user-greeting">
-                <div className="welcome">
-                    <h2>welcome,</h2>
-                    <h2 className="name">{firstName}</h2>
-                </div>
-                <div className="day">
-                    {currentDate}
-                </div>
-                <div className="time">
-                    {currentTime}
-                </div>
-                <div className="profile">
-                    <img src={profilePic} alt="" className='profile-pic' onClick={toggleDropdown}/>
-                    <div className="dropdown-content" id="dropdownMenu">
-                        <h2 className="user-official-name">Pranav Patnaik</h2>
-                        <p className="username">@pranavpatnaik_</p>
-                        <p className="commit-number">{commitsToday} commits</p>
-                        <hr />
-                        <div className="admin">
-                            <button className="log-out" onClick={handleSignOut}>Sign Out</button>
-                            <img src="add friends.png" alt="friends" className="friends" onClick={toggleFriends}/>
-                            
-                            <img src="settings.png" alt="settings" className="settings"/>
-                        </div>
-                    </div>
-                    <div id="overlay" className="overlay"></div>
-                    <div className="friends-content" id="friendsMenu">
-                        <div className="friends-content-top">
-                            <p className="friends-title"><span className="friend-underline-animation">friends</span></p>
-                            <div className="all-or-pending">
-                                <button 
-                                    onClick={() => handleViewToggle('all')}
-                                    style={{ backgroundColor: activeView === 'all' ? '#b8e0f7' : 'white' }}
-                                >
-                                    All
-                                </button>
-                                <p className="divider">|</p>
-                                <button 
-                                    onClick={() => handleViewToggle('pending')}
-                                    style={{ backgroundColor: activeView === 'pending' ? '#b8e0f7' : 'white' }}
-                                >
-                                    Pending
-                                </button>
-                            </div>
-                        </div>
-                        <div className="friends-list">
-                            {activeView === 'all' ? (
-                                friendsList.length > 0 ? (
-                                    friendsList.map((friend, index) => (
-                                        <div key={index} className="friend-profile">
-                                            <img 
-                                                src={friend.pfp || '/blue default pfp.png'} 
-                                                alt="" 
-                                                className="friend-pic"
-                                            />
-                                            <div>
-                                                <p className="friend-name">
-                                                    {friend.name} 
-                                                    <span className="friend-username">(@{friend.username})</span>
-                                                </p>
-                                                <p className="friend-commits">2 commits</p>
-                                            </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div className="friend-profile" style={{ 
-                                        justifyContent: 'center', 
-                                        color: '#1479BC', 
-                                        opacity: 0.7, 
-                                        fontStyle: 'italic' 
-                                    }}>
-                                        No friends added yet
-                                    </div>
-                                )
-                            ) : (
-                                // Pending requests view - now shows both incoming and outgoing
-                                pendingRequests.length > 0 ? (
-                                    pendingRequests.map((request, index) => (
-                                        <div key={index} className="friend-profile">
-                                            <img 
-                                                src={request.pfp || '/blue default pfp.png'} 
-                                                alt="" 
-                                                className="friend-pic"
-                                            />
-                                            <div>
-                                                <p className="friend-name">
-                                                    {request.name} 
-                                                    <span className="friend-username">(@{request.username})</span>
-                                                    <span style={{ 
-                                                        fontSize: '12px', 
-                                                        color: request.requestType === 'incoming' ? '#2ecc71' : '#3498db', 
-                                                        marginLeft: '8px',
-                                                        fontStyle: 'italic' 
-                                                    }}>
-                                                        {request.requestType === 'incoming' ? '(Incoming)' : '(Outgoing)'}
-                                                    </span>
-                                                </p>
-                                                <p className="friend-commits">2 commits</p>
-                                                {request.requestType === 'incoming' && (
-                                                    <div className="request-actions">
-                                                        <button 
-                                                            className="accept-button"
-                                                            onClick={() => handleAcceptRequest(request)}
-                                                            style={{
-                                                                padding: '4px 8px',
-                                                                marginRight: '8px',
-                                                                backgroundColor: '#2ecc71',
-                                                                color: 'white',
-                                                                border: 'none',
-                                                                borderRadius: '4px',
-                                                                cursor: 'pointer'
-                                                            }}
-                                                        >
-                                                            Accept
-                                                        </button>
-                                                        <button 
-                                                            className="decline-button"
-                                                            onClick={() => handleDeclineRequest(request)}
-                                                            style={{
-                                                                padding: '4px 8px',
-                                                                backgroundColor: '#e74c3c',
-                                                                color: 'white',
-                                                                border: 'none',
-                                                                borderRadius: '4px',
-                                                                cursor: 'pointer'
-                                                            }}
-                                                        >
-                                                            Decline
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div className="friend-profile" style={{ 
-                                        justifyContent: 'center', 
-                                        color: '#1479BC', 
-                                        opacity: 0.7, 
-                                        fontStyle: 'italic' 
-                                    }}>
-                                        No pending requests
-                                    </div>
-                                )
-                            )}
-                        </div>
-                        <div className="invite-friends">
-                            <form onSubmit={handleFriendRequest}>
-                                <input 
-                                    type="text" 
-                                    className="friend-input" 
-                                    placeholder="Invite friends (@username)" 
-                                    value={friendUsername}
-                                    onChange={(e) => setFriendUsername(e.target.value)}
-                                />
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <Header 
+                firstName={firstName}
+                currentDate={currentDate}
+                currentTime={currentTime}
+                userData={userData}
+                handleSignOut={handleSignOut}
+                profilePic={profilePic}
+                toggleDropdown={toggleDropdown}
+                commitsToday={commitsToday}
+                toggleFriends={toggleFriends}
+                toggleSettings={toggleSettings}
+            />
 
-            <div className="commits">
-                <p>march, 2025</p>
-                <div className="commit-box">
-                    {commitWeeks.map((_, weekIndex) => (
-                        <div key={weekIndex} className="commit-week">
-                        {Array.from({ length: 7 }).map((_, commitIndex) => {
-                            const squareIndex = weekIndex * 7 + commitIndex;
-                            const isToday = squareIndex === dayIndex; // Check if this is today's square
-                            const isBeforeToday = squareIndex < dayIndex;
-
-                            return (
-                                <div 
-                                    key={commitIndex} 
-                                    ref={isToday ? targetSquareRef : null} // Only assign ref to today's square
-                                    className={`commit ${isToday ? 'glowing' : ''} ${isBeforeToday ? 'dimmed' : ''}`}
-                                    style={{ backgroundColor: isToday ? commitColor : '' }}
-                                />
-                            );
-                        })}
-                    </div>
-                    ))}
-                </div>
-            </div>
-
+            <CommitGrid 
+                commitWeeks={commitWeeks}
+                dayIndex={dayIndex}
+                userData={userData}
+                getCommitColorForDate={getCommitColorForDate}
+                commitColor={commitColor}
+            />
 
             <div className="interaction">
-                <div className="recent-commits">
-                    <p className="recent-title"><u>recent commits</u></p>
-                    <div className="recent-box">
-                    {recentCommits.length > 0 ? (
-                            recentCommits.map((commit, index) => {
-                                // Check if commit.date matches the formattedDate
-                                const commitDate = commit.date; // Assuming commit.date is in "YYYY-MM-DD" format
-                                if (commitDate === formattedDate) {
-                                    return (
-                                        <div key={index} className="commit-entry">
-                                            <p className="commit-name">{commit.text}</p>
-                                            <span className="commit-time">{commit.timestamp}</span>
-                                        </div>
-                                    );
-                                }
-                                return; // Skip commits not matching the date
-                            })
-                        ) : (
-                            <p>No commits yet!</p>
-                        )}
-                    </div>
-                </div>
-
-                <div className="leaderboard">
-    <p className="leaderboard-title"><u>leaderboard</u></p>
-    <div className="leaderboard-box">
-        <div className="leaderboard-content-top">
-            <div className="leaderboard-toggle">
-                <button 
-                    className={`toggle-btn ${leaderboardView === 'day' ? 'active' : ''}`}
-                    onClick={() => handleLeaderboardToggle('day')}
-                >
-                    Day
-                </button>
-                <p className="divider">|</p>
-                <button 
-                    className={`toggle-btn ${leaderboardView === 'week' ? 'active' : ''}`}
-                    onClick={() => handleLeaderboardToggle('week')}
-                >
-                    Week
-                </button>
-                <p className="divider">|</p>
-                <button 
-                    className={`toggle-btn ${leaderboardView === 'month' ? 'active' : ''}`}
-                    onClick={() => handleLeaderboardToggle('month')}
-                >
-                    Month
-                </button>
-                <p className="divider">|</p>
-                <button 
-                    className={`toggle-btn ${leaderboardView === 'all' ? 'active' : ''}`}
-                    onClick={() => handleLeaderboardToggle('all')}
-                >
-                    All-Time
-                </button>
-            </div>
-        </div>
-        <div className="leaderboard-entries">
-            {leaderboardData.map((user, index) => (
-                <div key={index} className="friend-profile">
-                    <img 
-                        src={user.pfp || '/blue default pfp.png'} 
-                        alt="" 
-                        className="friend-pic"
-                    />
-                    <div>
-                        <p className="friend-name">
-                            {user.name}
-                            <span className="friend-username">(@{user.username})</span>
-                        </p>
-                        <p className="friend-commits">
-                            {leaderboardView === 'day' ? user.dailyCommits || 0 :
-                             leaderboardView === 'week' ? user.weeklyCommits || 0 :
-                             leaderboardView === 'month' ? user.monthlyCommits || 0 :
-                             user.totalCommits || 0} commits
-                        </p>
-                    </div>
-                </div>
-            ))}
-        </div>
-    </div>
-</div>
-
+                <RecentCommits 
+                    recentCommits={recentCommits}
+                    formattedDate={formattedDate}
+                />
+                
+                <Leaderboard 
+                    leaderboardView={leaderboardView}
+                    handleLeaderboardToggle={handleLeaderboardToggle}
+                    leaderboardData={leaderboardData}
+                />
             </div>
 
             <div className="committer">
                 <p>commit</p>
-                <input type="text" 
-                className="commit-input" 
-                placeholder="Record results"
-                value={commitText}
+                <input 
+                    type="text" 
+                    className="commit-input" 
+                    placeholder="Record results"
+                    value={commitText}
                     onChange={(e) => setCommitText(e.target.value)}
                     onKeyDown={handleKeyDown}
                 />
                 
-                {/* <button className="submit" onClick={handleCommit}>Submit</button> */}
+                {showLengthError && (
+                    <div className="length-error">
+                        Commit too long (max 50 characters)
+                    </div>
+                )}
             </div>
+
+            <Friends 
+                activeView={activeView}
+                handleViewToggle={handleViewToggle}
+                friendsList={friendsList}
+                pendingRequests={pendingRequests}
+                friendUsername={friendUsername}
+                setFriendUsername={setFriendUsername}
+                handleFriendRequest={handleFriendRequest}
+                handleAcceptRequest={handleAcceptRequest}
+                handleDeclineRequest={handleDeclineRequest}
+            />
+
+            <Settings 
+                profilePic={profilePic}
+                isUploading={isUploading}
+                handleProfilePictureUpdate={handleProfilePictureUpdate}
+                userData={userData}
+                onConfirm={handleConfirmProfileUpdate}
+            />
+
+            <div id="overlay" className="overlay"></div>
         </div>
     );
 };

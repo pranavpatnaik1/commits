@@ -20,7 +20,6 @@ body {
     padding-top: 20px;
     width: calc(100% - 160px);
     box-sizing: border-box; 
-    overflow-x: hidden; /* Prevent horizontal scrolling */
     margin-bottom: 80px;
 }
 
@@ -49,6 +48,7 @@ body {
     margin-top: 20px;
     margin-bottom: 10px;
     color: white;
+    text-shadow: 0px 2px 5px rgba(0, 0, 0, 0.445);
 }
 
 .welcome h2 {
@@ -79,20 +79,38 @@ body {
     }
 }
 
+@keyframes monthFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.month-text {
+    animation: monthFadeIn 0.4s ease-out forwards;
+    animation-delay: 0.8s;
+    opacity: 0;
+}
+
 .time {
     margin-right: 18px;
     padding: 5px;
     padding-right: 7px;
     padding-left: 7px;
     border-radius: 5px;
-    background-color: #6DACD5;
+    background-color: #71b3df;
     box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.445);
-    transition: 0.4s;
+    transition: 0.2s;
+    font-weight: 500;
     white-space: nowrap;
 }
 
 .time:hover {
-    background-color: #76b8e4;
+    background-color: #7ecbff;
     box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.445);
     cursor: default;
 }
@@ -103,14 +121,15 @@ body {
     padding-right: 7px;
     padding-left: 7px;
     border-radius: 5px;
-    background-color: #6DACD5;
+    font-weight: 500;
+    background-color: #71b3df;
     box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.445);
-    transition: 0.4s;
+    transition: 0.2s;
     white-space: nowrap;
 }
 
 .day:hover {
-    background-color: #76b8e4;
+    background-color: #7ecbff;
     box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.445);
     cursor: default;
 }
@@ -122,42 +141,50 @@ body {
     height: 50px;
     border-radius: 80px;
     border: 2px solid white;
-    box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.445);
+    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.445);
     z-index: 3;
+    transition: 0.2s;
+}
+
+.profile-pic:hover {
+    transform: scale(1.1);
+}
+
+.profile-pic:active {
+    transform: scale(1.2);
 }
 
 /* COMMITS, COMMIT BOX */
 
 .commits {
-    font-size: 25px;
+    font-size: 15px;
+    font-family: 'Inter';
     margin-top: 0px;
     width: 100%;
     font-weight: 300;
-    font-style: italic;
 }
 
 .commits p {
     font-size: 20px;
-    font-weight: 600;
+    font-weight: 400;
+    font-style: italic;
     margin-bottom: 5px;
 }
 
 .commit-box {
-    
     display: flex;
     background-color: #6DACD5;
     align-items: center;
     height: 170px;
     max-width: 100%;
     margin-bottom: 20px;
-    
     border: 2px solid white;
     border-radius: 10px;
     box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.445);
     padding: 15px;
     overflow-x: auto;
-    overflow-y: hidden;
     z-index: 1;
+    position: relative; /* Add this to create a new stacking context */
 }
 
 .commit-week.not-current-month .commit {
@@ -184,20 +211,30 @@ body {
 }
 
 .commit.glowing {
-    border: 0.001px solid white;
+    border: 0.0001px solid #ffffff;
+    box-shadow: 0px 0px 8px #1984ff;
+    opacity: 1; /* Full opacity for glowing days */
+}
+
+.commit.past {
+    border: 0.001px solid rgba(255, 255, 255, 0.66);
     opacity: 1; /* Full opacity for glowing days */
 }
 
 .commit.dimmed {
     opacity: 0.2;
     background-color: #0f0f0f;
-  }
-
-.commit:hover {
-    
-    transform: scale(1.2);
 }
 
+.commit:hover {
+    z-index: 9999; /* Much higher z-index when hovering */
+    transform: scale(1.2);
+    position: relative; /* Ensure position is set for z-index to work */
+}
+
+.commit:hover::after {
+    z-index: 10000; /* Even higher z-index for the tooltip */
+}
 
 .commit-week {
     background: none;
@@ -212,6 +249,28 @@ body {
     width: 19px;
     height: 19px;
     margin-top: 5px;
+    position: relative;
+}
+
+.commit:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 130%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(255, 255, 255, 0.95);
+    color: #1479BC;
+    padding: 5px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+    font-family: "Inter";
+    font-weight: 500;
+    pointer-events: none;
+    border: 1px solid #D3ECFC;
+    z-index: 9999;
 }
 
 .interaction {
@@ -230,6 +289,7 @@ body {
     box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.445);
     border: 2px solid #D3ECFC;
     overflow-y: auto;
+    padding-top: 5px;
 }
 
 .recent-box::-webkit-scrollbar {
@@ -242,7 +302,7 @@ body {
 }
 
 .recent-box::-webkit-scrollbar-thumb {
-    background-color: #ffffff; /* Optional: Customize the scrollbar color */
+    background-color: #c2e4ff; /* Optional: Customize the scrollbar color */
     border-radius: 10px;
 }
 
@@ -344,6 +404,7 @@ body {
     cursor: pointer;
     transition: 0.5s;
     margin: 0;
+    outline:none;
 }
 
 .leaderboard-toggle .toggle-btn:hover {
@@ -418,7 +479,13 @@ body {
     line-height: 1; /* Ensures better vertical alignment */
 }
 
+.commit-input::placeholder {
+    opacity: 0.5;
+    font-weight: 500;
+}
+
 .commit-input {
+    font-family: 'Inter';
     background: none;
     border: none;
     color: #3CB1E8;
@@ -448,43 +515,131 @@ body {
 
 .commit-entry {
     font-size: 15px;
-    background-color: transparent;
+    background-color: #BDE5FF;
     margin-top: 5px;
-    margin-bottom: 5px;
-    margin-left: 10px;
-    color: #3CB1E8;
+    margin-bottom: 10px;
+    margin-left: 8px;
+    margin-right: 8px;
+    padding-top: 5px;
+    padding-left: 10px;
+    padding-bottom: 5px;
+    border-radius: 5px;
+    color: #15a1ff;
+    border: 3px solid #b0ddff;
+    box-shadow: 0px 0px 3px rgb(22, 123, 255);
+    transition: 0.1s;
+    animation: slideInFade 0.3s ease-out forwards;
+    opacity: 0; /* Start invisible */
+    /* Add this to ensure each new commit appears on top */
+    position: relative;
+    z-index: 1;
+    transition: transform 0.2s ease;
+}
+
+.commit-entry:hover {
+    transform: scale(1.1);
 }
 
 .commit-name {
-    font-weight: 600;
+    font-weight: 700;
     margin-top: 0;
     margin-bottom: 0;
     background-color: transparent;
+    /* text-shadow: -0.1px -0.1px 0 #ffffff, 0.1px -0.1px 0 #ffffff, -0.1px 0.1px 0 #ffffff, 0.1px 0.1px 0 #ffffff; */
 }
 
 .commit-time {
     background-color: transparent;
+    margin-top: 0;
+    font-weight: 500;
+    font-size: 11px;
+    font-style: italic;
+    text-decoration: underline;
+}
+
+/* Add these animations to your CSS */
+@keyframes slideInFade {
+    0% {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* DROPDOWN */
 
   .dropdown-content {
-    display: none;
+    display: flex;
+    flex-direction: column;
     position: absolute;
     background-color: #fff;
-    min-width: 160px;
-    box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
-    z-index: 0;
-    margin-right: 25px;
-    margin-top: 25px;
     min-width: 300px;
     min-height: 100px;
+    box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
     border-radius: 5px;
-    z-index: 2;
-
     color: black;
     padding: 20px;
-  }
+    margin-right: 25px;
+    margin-top: 25px;
+    z-index: 2;
+    
+    /* Animation properties */
+    transform-origin: top right;
+    transition: all 0.2s ease-out;
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(0.95);
+    pointer-events: none;
+}
+
+.dropdown-content.show {
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1);
+    pointer-events: auto;
+}
+
+.dropdown-content hr {
+    border: none;
+    height: 1px;
+    background-color: #D3ECFC;
+    margin: 15px 0;
+}
+
+.dropdown-content .admin {
+    display: flex;
+    align-items: center;
+}
+
+.dropdown-content .log-out {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.dropdown-content .user-official-name {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.dropdown-content .username {
+    margin: 5px 0;
+    font-size: 14px;
+    opacity: 0.7;
+}
+
+.dropdown-content .commit-number {
+    margin: 5px 0;
+    font-size: 13px;
+    opacity: 0.5;
+}
 
   .username {
     margin:0;
@@ -581,7 +736,7 @@ body {
     margin-left: 5px;
     font-size: 40px;
     font-weight: 600;
-    color: #1479BC;
+    color: #1f96e6;
   }
 
   .friends-content-top {
@@ -601,9 +756,10 @@ body {
 .all-or-pending button {
     padding: 2px 8px;
     border: none;
+    outline: none;
     border-radius: 5px;
     background-color: white;
-    color: #1479BC;
+    color: #2399e8;
     font-weight: 600;
     cursor: pointer;
     transition: 0.2s;
@@ -618,7 +774,7 @@ body {
 }
 
 .all-or-pending button:hover {
-    background-color: #b8e0f7;
+    background-color: #a8defd;
 }
 
 .all-or-pending button:active {
@@ -692,26 +848,34 @@ body {
 }
 
 .friend-profile:hover {
-    background-color: #e0f4ff84;
+    background-color: #e7f5fd84;
 }
 
 .friend-pic {
     border: 2px solid rgb(206, 206, 206);
-    box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.445);
+    box-shadow: 0px 0px 3px rgba(0, 0, 0, 0.445);
     border-radius: 30px;
     object-fit: cover;
     width: 40px;
     height: 40px;
     margin-right: 10px;
+    transition: transform 0.3s ease;
+}
+
+.friend-pic:hover {
+    animation: circleComplete 0.8s ease forwards;
+    transform: scale(1.01);
+    transform-origin: center;
 }
 
 .friend-name {
-    color: black;
+    color: rgb(64, 160, 255);
+    font-weight: 500;
     margin: 0;
 }
 
 .friend-commits {
-    color: black;
+    color: rgba(103, 189, 255, 0.747);
     margin: 0;
     font-size: 11px;
 }
@@ -720,6 +884,7 @@ body {
     font-size: 10px;
     font-style: italic;
     opacity: 0.7;
+    margin-left: 5px;
 
     justify-items: center;
 }
@@ -747,6 +912,214 @@ body {
     border-radius: 5px;
 
     background-color: #1479BC;
-    animation: underlineSlide 0.8s ease-out forwards;
+    animation: friendsUnderline 0.8s ease-out forwards;
     animation-delay: 0s;
+}
+
+@keyframes circleComplete {
+    0% {
+        border: 2px solid rgb(206, 206, 206);
+        transform: rotate(0deg);
+    }
+    100% {
+        border: 2px solid #126ea0;
+        transform: rotate(360deg);
+    }
+}
+
+.length-error {
+    position: fixed;
+    top: 0%;
+    left: 50%;
+    background-color: #e74c3c;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-weight: 600;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    animation: fadeInOut 1.5s ease-in-out forwards;
+    z-index: 1000;
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+    15% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    85% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+}
+
+.settings-content {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    width: 80%;
+    max-width: 800px;
+    height: 80vh;
+    border-radius: 10px;
+    border: 4px solid #2EABFF;
+    box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    padding: 20px;
+}
+
+.settings-content {
+    z-index: 1000;
+}
+
+.settings-content-top {
+    border-bottom: 2px solid #D3ECFC;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.settings-title {
+    font-size: 2.5em;
+    color: #1479BC;
+    margin: 0;
+    font-weight: 600;
+}
+
+.settings-underline-animation {
+    position: relative;
+    display: inline-block;
+}
+
+.settings-underline-animation::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 4px;
+    bottom: 0;
+    left: 0;
+    background-color: #1479BC;
+    animation: settingsUnderline 0.8s ease-out forwards;
+}
+
+@keyframes friendsUnderline {
+    from {
+        width: 0;
+    }
+    to {
+        width: 100%;
+    }
+}
+
+/* For settings animation */
+@keyframes settingsUnderline {
+    to {
+        width: 100%;
+    }
+}
+
+.settings-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.profile-picture-section {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.settings-profile-picture {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #2EABFF;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.settings-profile-picture.uploading {
+    opacity: 0.5;
+}
+
+.upload-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+}
+
+.spinner {
+    width: 30px;
+    height: 30px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #2EABFF;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.arrow {
+    background: none;
+    border: none;
+    color: rgb(41, 130, 255);
+    font-size: 20px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 10px;
+    background-color: rgb(255, 255, 255);
+    border-radius: 40px;
+    transition: transform 0.2s;
+}
+
+.arrow:hover {
+    transform: scale(1.05);
+    opacity: 0.9;
+}
+
+.left-arrow {
+    margin-right: 5px;
+}
+
+.right-arrow {
+    margin-left: 5px;
+}
+
+.profile-picture-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.confirm-profile {
+    margin-top: 20px;
+    padding: 10px 20px;
+    background-color: #2EABFF;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s;
+    /* Center the button */
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.confirm-profile:hover {
+    background-color: #1479BC;
 }
