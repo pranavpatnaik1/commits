@@ -5,6 +5,7 @@ import { Login } from "./pages/Login.jsx";
 import { Commits } from "./pages/Commits.jsx";
 import { Signup } from "./pages/Signup.jsx";
 import { Profile } from "./pages/Profile.jsx";
+import { VerifyEmail } from './pages/VerifyEmail';
 import { onAuthStateChanged } from "firebase/auth";
 import "./App.css";
 import { auth } from "./firebase.js";
@@ -64,6 +65,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/verify-email" element={<VerifyEmail />} />
       </Routes>
     </BrowserRouter>
   );

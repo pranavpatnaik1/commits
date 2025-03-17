@@ -1,0 +1,256 @@
+.settings-content {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    width: 80%;
+    max-width: 800px;
+    height: 80vh;
+    border-radius: 10px;
+    border: 4px solid #2EABFF;
+    box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    padding: 20px;
+}
+
+.settings-content-top {
+    border: none;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.settings-title {
+    font-size: 2.5em;
+    color: #1479BC;
+    margin: 0;
+    font-weight: 600;
+}
+
+.settings-underline-animation {
+    position: relative;
+    display: inline-block;
+}
+
+.settings-underline-animation::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 4px;
+    bottom: 0;
+    left: 0;
+    background-color: #1479BC;
+    animation: settingsUnderline 0.8s ease-out forwards;
+}
+
+.settings-body {
+    display: flex;
+    padding: 0;  /* Remove padding */
+}
+
+.settings-layout {
+    display: flex;
+    width: 100%;
+    padding: 0;  /* Remove padding */
+    justify-content: space-between; /* Keep items pushed apart */
+}
+
+.settings-left-section {
+    display: flex;
+    border: 2px solid rgba(52, 194, 255, 0.192);
+    border-radius: 8px;
+    flex-direction: row;
+    justify-content: space-between; /* Space between profile pic and user info */
+    width: 100%; /* Take full width */
+    padding: 0 20px; /* Add padding on both sides */
+    padding-left: 0px;
+}
+
+.profile-picture-section {
+    display: flex;
+    
+    flex-direction: column;
+    align-items: center;
+    margin-top: 0px;  /* Add some top margin */
+
+}
+
+.profile-picture-container {
+    display: flex;
+    align-items: center;
+    gap: 0;  /* Remove gap */
+    padding-left: 0;
+    position: relative;  /* Add position relative */
+    margin-bottom: 0px;
+}
+
+.settings-profile-picture {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #2EABFF;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    margin: 0;  /* Remove any margin */
+    padding-left: 0;
+}
+
+.user-info-section {
+    padding: 20px 0px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    min-width: 400px; /* Increased width */
+    margin-right: 20px; /* Add right margin */
+}
+
+.user-full-name {
+    font-size: 42px;
+    color: #1479BC;
+    margin: 0 0 15px 0;
+    font-weight: 600;
+    text-align: right;
+    width: 100%;
+    display: block; /* Ensure display */
+}
+
+.user-username {
+    font-size: 24px;  /* Increased font size */
+    color: #0099ff;
+    margin: 0 0 15px 0;
+    font-style: italic;
+    text-align: right;
+    width: 100%;
+}
+
+.user-commits {
+    font-size: 20px;  /* Increased font size */
+    color: #2EABFF;
+    margin: 0;
+    font-weight: 500;
+    text-align: right;
+    width: 100%;
+}
+
+/* Upload related styles */
+.uploading {
+    opacity: 0.5;
+}
+
+.upload-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 50%;
+    z-index: 10;
+}
+
+.upload-button {
+    position: absolute;
+    bottom: -8px;
+    right: -8px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #2EABFF;
+    color: white;
+    border: 2px solid white;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    z-index: 2;
+}
+
+.confirm-profile {
+    position: absolute;
+    bottom: 30px;
+    right: 30px;
+    padding: 12px 30px;
+    background-color: #2EABFF;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 16px;
+    transition: all 0.2s;
+}
+
+.confirm-profile:hover {
+    background-color: #1479BC;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.arrow {
+    background: none;
+    border: none;
+    font-size: 32px;
+    cursor: pointer;
+    color: #1479BC;
+    padding: 15px;
+    transition: transform 0.2s;
+}
+
+.arrow:hover {
+    color: #49a8e7;
+    transform: scale(1.05);
+}
+
+.profile-dots-container {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    padding: 5px;
+}
+
+.profile-dot {
+    min-width: 20px;
+    min-height: 20px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid white;
+    padding: 0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    opacity: 0.8;
+    flex-shrink: 0;
+}
+
+.profile-dot:hover {
+    transform: scale(1.15);
+    opacity: 1;
+    outline: none;
+    border: none;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25);
+}
+
+.profile-dot.active {
+    opacity: 1;
+    transform: scale(1.2);
+    box-shadow: 0 0 0 2px white, 0 0 0 4px currentColor, 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes settingsUnderline {
+    to {
+        width: 100%;
+    }
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

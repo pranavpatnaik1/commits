@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { auth } from "../firebase";
 import { Navigate, useNavigate } from "react-router-dom";
-import { getFirestore, doc, setDoc, serverTimestamp, getDoc } from "firebase/firestore";
+import { getFirestore, doc, setDoc, serverTimestamp, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 import "../assets/style/Signup.css";
 
 const db = getFirestore();
@@ -13,6 +13,9 @@ export const Signup = ({user}) => {
     const [full_name, setName] = useState("");
     const [username, setUsername] = useState("");
     const [signUpConfirmed, setSignUpConfirmed] = useState(false);
+    const [showError, setShowError] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
+    const [verificationSent, setVerificationSent] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -37,15 +40,51 @@ export const Signup = ({user}) => {
         checkSignUpStatus();
     }, [user, navigate]);
 
+    const showErrorMessage = (message) => {
+        setErrorMessage(message);
+        setShowError(true);
+        setTimeout(() => setShowError(false), 3000);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!email || !password) return;
+        
+        // Validation checks
+        if (!email || !password || !full_name || !username) {
+            showErrorMessage("All fields are required");
+            return;
+        }
+
+        if (password.length < 6) {
+            showErrorMessage("Password must be at least 6 characters long");
+            return;
+        }
+
+        if (username.length < 3) {
+            showErrorMessage("Username must be at least 3 characters long");
+            return;
+        }
 
         try {
+            // Check if username already exists
+            const usersRef = collection(db, "users");
+            const q = query(usersRef, where("username", "==", username));
+            const querySnapshot = await getDocs(q);
+            
+            if (!querySnapshot.empty) {
+                showErrorMessage("Username already taken");
+                return;
+            }
+
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
+
+            // Send verification email
+            await sendEmailVerification(user);
+            setVerificationSent(true);
+            showErrorMessage("Verification email sent! Please check your inbox");
+
             const userRef = doc(db, "users", user.uid);
-            
             await setDoc(userRef, {
                 name: full_name,
                 username: username,
@@ -66,13 +105,39 @@ export const Signup = ({user}) => {
                     incoming_requests: []
                 },
                 signUpConfirm: false,
-                pfp: "",
+                pfp: "/blue default pfp.png", // Set default profile picture
+                emailVerified: false,
             });
 
-            // Use replace to allow proper back navigation
-            navigate('/profile', { replace: true });
+            // Wait on profile page redirect until email is verified
+            setTimeout(() => {
+                navigate('/verify-email', { 
+                    replace: true,
+                    state: { email: email }
+                });
+            }, 3000);
+
         } catch (error) {
-            console.error("Signup error:", error.code, error.message);
+            switch (error.code) {
+                case 'auth/email-already-in-use':
+                    showErrorMessage("An account already exists with this email");
+                    break;
+                case 'auth/invalid-email':
+                    showErrorMessage("Please enter a valid email address");
+                    break;
+                case 'auth/operation-not-allowed':
+                    showErrorMessage("Sign up is currently disabled");
+                    break;
+                case 'auth/weak-password':
+                    showErrorMessage("Password is too weak. Use at least 6 characters");
+                    break;
+                case 'auth/network-request-failed':
+                    showErrorMessage("Network error. Please check your connection");
+                    break;
+                default:
+                    showErrorMessage("Sign up failed. Please try again");
+                    break;
+            }
         }
     };
 
@@ -123,6 +188,11 @@ export const Signup = ({user}) => {
                     Already have an account? Login
                 </button>
             </form>
+            {showError && (
+                <div className={`signup-error ${verificationSent ? 'success' : ''}`}>
+                    {errorMessage}
+                </div>
+            )}
         </div>
     );
 };

@@ -11,15 +11,26 @@ const db = getFirestore();
 export const Login = ({user}) => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [showError, setShowError] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
     const navigate = useNavigate();
 
     if (user?.uid) {
         return <Navigate to='/app' />;
     }
 
+    const showErrorMessage = (message) => {
+        setErrorMessage(message);
+        setShowError(true);
+        setTimeout(() => setShowError(false), 3000);
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (!email || !password) return;
+        if (!email || !password) {
+            showErrorMessage("All fields are required");
+            return;
+        }
 
         signInWithEmailAndPassword(auth, email, password)
             .then(async (userCredential) => {
@@ -32,16 +43,38 @@ export const Login = ({user}) => {
                         if (docSnap.exists()) {
                             console.log("User data:", docSnap.data());
                         } else {
-                            console.log("No such document!");
+                            showErrorMessage("User account is incomplete. Please contact support.");
                         }
                     } catch (error) {
-                        console.error("Error getting document:", error);
+                        showErrorMessage("Failed to load user data. Please try again.");
                     }
                 };
                 await getUserData(user.uid);
             })
             .catch((error) => {
-                console.log(error.code, error.message);
+                switch (error.code) {
+                    case 'auth/invalid-email':
+                        showErrorMessage("Please enter a valid email address");
+                        break;
+                    case 'auth/user-not-found':
+                        showErrorMessage("User doesn't exist with this email");
+                        break;
+                    case 'auth/wrong-password':
+                        showErrorMessage("Wrong password. Please try again");
+                        break;
+                    case 'auth/too-many-requests':
+                        showErrorMessage("Too many failed attempts. Please try again later");
+                        break;
+                    case 'auth/network-request-failed':
+                        showErrorMessage("Network error. Please check your connection");
+                        break;
+                    case 'auth/user-disabled':
+                        showErrorMessage("This account has been disabled");
+                        break;
+                    default:
+                        showErrorMessage("Login failed. Please try again");
+                        break;
+                }
             });
     };
 
@@ -74,6 +107,11 @@ export const Login = ({user}) => {
                     Need an account? Sign up
                 </button>
             </form>
+            {showError && (
+                <div className="login-error">
+                    {errorMessage}
+                </div>
+            )}
         </div>
     );
 };

@@ -1,0 +1,122 @@
+.verify-email-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    width: 100%;
+    background-color: #1479BC;
+    color: white;
+    padding: 20px;
+    text-align: center;
+    font-family: 'Inter';
+    box-sizing: border-box;
+    position: fixed;
+    top: 0;
+    left: 0;
+}
+
+.verify-email h1 {
+    margin-bottom: 30px;
+    font-size: 2.5em;
+}
+
+.verify-email p {
+    margin: 10px 0;
+    font-size: 1.1em;
+    max-width: 400px;
+    line-height: 1.5;
+}
+
+.email-address {
+    font-weight: bold;
+    color: #D3ECFC;
+    margin: 20px 0;
+    font-size: 1.2em !important;
+    padding: 10px 20px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+    width: fit-content;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+.resend-button {
+    margin-top: 30px;
+    padding: 12px 24px;
+    background-color: #49a8e7;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    cursor: pointer;
+    transition: 0.2s;
+    font-size: 1em;
+    width: fit-content;
+}
+
+.resend-button:hover {
+    background-color: #309be2;
+    transform: scale(1.05);
+}
+
+.success-message {
+    margin-top: 20px;
+    padding: 15px 30px;
+    background-color: #2ecc71;
+    border-radius: 5px;
+    animation: fadeIn 0.5s ease-in;
+    font-size: 1.1em;
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.please-check {
+    text-wrap: balance;
+}
+
+.verification-sent-msg {
+    font-weight: 500;
+    margin-bottom: 0;
+}
+
+@keyframes fadeIn {
+    from { 
+        opacity: 0; 
+        transform: translateY(-10px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.notification {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-weight: 600;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    animation: fadeInOut 3s ease-in-out forwards;
+    z-index: 1000;
+}
+
+.notification.error {
+    background-color: #e74c3c;
+}
+
+.notification.success {
+    background-color: #2ecc71;
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0; transform: translate(-50%, -20px); }
+    15% { opacity: 1; transform: translate(-50%, 0); }
+    85% { opacity: 1; transform: translate(-50%, 0); }
+    100% { opacity: 0; transform: translate(-50%, -20px); }
+}
+

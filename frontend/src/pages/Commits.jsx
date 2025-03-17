@@ -1,23 +1,8 @@
-import { signOut } from "firebase/auth";
-import "../assets/style/Commits.css";
-import { auth } from "../firebase";
-import { Navigate } from "react-router-dom";
-import { 
-    getFirestore, 
-    doc, 
-    updateDoc, 
-    arrayUnion, 
-    getDoc, 
-    increment,
-    collection,
-    query,
-    where,
-    getDocs,
-    writeBatch
-} from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL, deleteObject, listAll } from "firebase/storage";
-import { storage } from "../firebase";
 import React, { useState, useEffect, useRef } from "react";
+import { Navigate } from "react-router-dom";
+import { signOut } from "firebase/auth";
+import { auth, db } from "../firebase";
+import { doc, updateDoc, getDoc, onSnapshot } from "firebase/firestore";
 import { Header } from '../components/Header';
 import { CommitGrid } from '../components/CommitGrid';
 import { RecentCommits } from '../components/RecentCommits';
@@ -25,7 +10,16 @@ import { Leaderboard } from '../components/Leaderboard';
 import { Friends } from '../components/Friends';
 import { Settings } from '../components/Settings';
 
-const db = getFirestore();
+// Operations imports
+import { fetchUserData } from '../assets/operations/userOperations';
+import { handleCommit } from '../assets/operations/commitOperations';
+import { handleFriendRequest } from '../assets/operations/friendOperations';
+import { handleProfilePictureUpdate } from '../assets/operations/profileOperations';
+import { toggleDropdown, toggleFriends, toggleSettings } from '../assets/operations/dropdownOperations';
+import { fetchLeaderboardData } from '../assets/operations/leaderboardOperations';
+import { updateDateTime, getCommitColorForDate } from '../assets/operations/dateTimeOperations';
+
+import "../assets/style/Commits.css";
 
 export const Commits = ({ user }) => {
     const [commitText, setCommitText] = useState("");
@@ -52,58 +46,33 @@ export const Commits = ({ user }) => {
     const [isUploading, setIsUploading] = useState(false);
     const [commitCounts, setCommitCounts] = useState({});
     const MAX_COMMIT_LENGTH = 200;
+    const [currentTheme] = useState({
+        primary: '#1479BC',
+        secondary: '#6DACD5',
+        accent: '#2EABFF',
+        hover: '#49a8e7',
+        border: '#D3ECFC',
+        boxShadow: 'rgba(0, 0, 0, 0.445)',
+        commitBox: '#6DACD5',
+        recentBox: '#6DACD5',
+        leaderboardBox: '#6DACD5',
+        text: '#1479BC',
+        buttonBg: '#2EABFF',
+        buttonHover: '#1479BC'
+    });
 
     useEffect(() => {
-        const fetchUserData = async () => {
-            if (user?.uid) {
-                const userRef = doc(db, "users", user.uid);
-                try {
-                    const docSnap = await getDoc(userRef);
-                    if (docSnap.exists()) {
-                        const data = docSnap.data();
-                        setUserData(data);
-
-                        // Handle profile picture
-                        if (data.pfp) {
-                            setProfilePic(data.pfp);
-                            console.log("Setting profile picture to:", data.pfp);
-                        } else {
-                            setProfilePic('/blue default pfp.png');
-                            console.log("No profile picture found, using default");
-                        }
-                    }
-                } catch (error) {
-                    console.error("Error fetching user data:", error);
-                    setProfilePic('/blue default pfp.png');
-                }
-            }
-        };
-        
-        fetchUserData();
-    }, [user]); // Remove defaultPics from dependencies
+        fetchUserData(user, setUserData, setProfilePic);
+    }, [user]);
 
     const firstName = userData?.name ? userData.name.split(' ')[0].toLowerCase() : '';
     const fullName = userData?.name || 'User';
 
-    // Function to update the date and time
-    const updateDateTime = () => {
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const day = String(now.getDate()).padStart(2, '0');
-        const formattedDate = `${year}-${month}-${day}`;
-        const formattedTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'}); // "HH:MM"
-        
-        setCurrentDate(formattedDate);
-        setCurrentTime(formattedTime);
-    };
-
-    // Set interval to update time and date every second
+    // Update useEffect for date/time
     useEffect(() => {
-        updateDateTime(); // Initialize with current time and date
-        const interval = setInterval(updateDateTime, 1000); // Update every second
-
-        // Cleanup the interval when the component unmounts
+        const interval = setInterval(() => {
+            updateDateTime(setCurrentDate, setCurrentTime);
+        }, 1000);
         return () => clearInterval(interval);
     }, []);
 
@@ -322,65 +291,14 @@ export const Commits = ({ user }) => {
         resetPeriodicalCounts();
     }, [userData, user.uid]);
 
+    // Update leaderboard effect
     useEffect(() => {
-        const fetchLeaderboardData = async () => {
-            try {
-                // Get all friends' data including current user
-                const usersRef = collection(db, "users");
-                let usernames = [...(userData?.friends || [])];
-                
-                // Always include current user
-                if (userData?.username) {
-                    usernames.push(userData.username);
-                }
-
-                if (usernames.length === 0) return;
-
-                // Get fresh data for all users
-                const q = query(usersRef, where("username", "in", usernames));
-                const querySnapshot = await getDocs(q);
-                
-                // Get today's date for filtering daily commits
-                const today = new Date().toISOString().split('T')[0];
-                
-                const results = querySnapshot.docs.map(doc => {
-                    const userData = doc.data();
-                    // Calculate daily commits from commitCounts if viewing by day
-                    if (leaderboardView === 'day') {
-                        const todayCommits = userData.commitCounts?.[today] || 0;
-                        return {
-                            ...userData,
-                            dailyCommits: todayCommits
-                        };
-                    }
-                    return userData;
-                });
-
-                // Sort based on selected view
-                const sortedResults = results.sort((a, b) => {
-                    switch(leaderboardView) {
-                        case 'day':
-                            return (b.dailyCommits || 0) - (a.dailyCommits || 0);
-                        case 'week':
-                            return (b.weeklyCommits || 0) - (a.weeklyCommits || 0);
-                        case 'month':
-                            return (b.monthlyCommits || 0) - (a.monthlyCommits || 0);
-                        case 'all':
-                            return (b.totalCommits || 0) - (a.totalCommits || 0);
-                        default:
-                            return 0;
-                    }
-                });
-
-                console.log("Updated leaderboard data:", sortedResults);
-                setLeaderboardData(sortedResults);
-            } catch (error) {
-                console.error("Error fetching leaderboard data:", error);
-            }
+        const updateLeaderboard = async () => {
+            const data = await fetchLeaderboardData(userData, leaderboardView);
+            setLeaderboardData(data);
         };
-
-        fetchLeaderboardData();
-    }, [userData, leaderboardView, recentCommits]); // Added recentCommits as dependency
+        updateLeaderboard();
+    }, [userData, leaderboardView, recentCommits]);
 
     // LOGIN DETAILS
 
@@ -394,106 +312,59 @@ export const Commits = ({ user }) => {
             .catch((error) => console.log("Sign Out error:", error));
     };
 
-    const handleCommit = async () => {
-        if (!commitText.trim()) return;
-        
-        if (commitText.length > MAX_COMMIT_LENGTH) {
-            setShowLengthError(true);
-            setTimeout(() => setShowLengthError(false), 3000);
-            return;
-        }
-
-        const now = new Date();
-        const formattedDate = now.toISOString().split("T")[0];
-        const uniqueId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        
-        const fullTimestamp = now.toLocaleTimeString("en-US", { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: true
-        });
-        
-        const displayTimestamp = now.toLocaleTimeString("en-US", { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            hour12: true
-        });
-
-        try {
-            const newCommit = {
-                id: uniqueId,
-                date: formattedDate,
-                text: commitText,
-                timestamp: fullTimestamp,
-                displayTime: displayTimestamp,
-                createdAt: Date.now()
-            };
-
-            // Update the recentCommits state immediately
-            setRecentCommits(prevCommits => [newCommit, ...prevCommits]);
-
-            const userRef = doc(db, "users", user.uid);
-            await updateDoc(userRef, {
-                commits_master: arrayUnion(newCommit),
-                [`commitCounts.${formattedDate}`]: increment(1),
-                'totalCommits': increment(1),
-                'dailyCommits': increment(1),
-                'weeklyCommits': increment(1),
-                'monthlyCommits': increment(1)
-            });
-
-            setCommitText("");
-        } catch (error) {
-            console.error("Error saving commit:", error);
-        }
-    };
+    const handleCommitWrapper = () => handleCommit(commitText, user, setRecentCommits, setCommitText);
 
     const handleKeyDown = (e) => {
         if (e.key === "Enter") {
             e.preventDefault(); // Prevent form submission (if any)
-            handleCommit(); // Trigger commit on Enter key press
+            handleCommitWrapper(); // Trigger commit on Enter key press
         }
     };
 
-    const fetchCommits = async () => {
-        const userRef = doc(db, "users", user.uid);
+    const fetchCommits = () => {
         try {
-            const docSnap = await getDoc(userRef);
-            if (docSnap.exists()) {
-                const userData = docSnap.data();
-                if (userData.commits_master) {
-                    // Sort commits by date and time in reverse chronological order
-                    const commits = Array.isArray(userData.commits_master) 
-                        ? userData.commits_master 
-                        : Object.values(userData.commits_master);
+            const userRef = doc(db, "users", user.uid);
+            
+            const unsubscribe = onSnapshot(userRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const userData = docSnap.data();
+                    const commits = userData.commits || [];
+                    const commitCounts = userData.commitCounts || {};
                     
-                    const sortedCommits = commits.sort((a, b) => {
-                        // Compare dates first
-                        const dateComparison = new Date(b.date) - new Date(a.date);
-                        if (dateComparison !== 0) return dateComparison;
-                        
-                        // If same date, compare times
-                        return b.timestamp.localeCompare(a.timestamp);
-                    });
+                    // Update commit counts and user data
+                    setCommitCounts(commitCounts);
+                    setUserData(userData);
+                    
+                    // Format and sort commits
+                    const formattedCommits = commits
+                        .map(commit => ({
+                            text: commit.text,
+                            date: commit.date,
+                            timestamp: commit.timestamp
+                        }))
+                        .sort((a, b) => {
+                            const dateB = new Date(`${b.date} ${b.timestamp}`);
+                            const dateA = new Date(`${a.date} ${a.timestamp}`);
+                            return dateB - dateA;
+                        });
 
-                    setRecentCommits(sortedCommits);
-                } else {
-                    setRecentCommits([]);
+                    setRecentCommits(formattedCommits);
                 }
-                
-                // Also update commit counts
-                if (userData.commitCounts) {
-                    setCommitCounts(userData.commitCounts);
-                }
-            } else {
-                console.log("No such document!");
-                setRecentCommits([]);
-            }
+            });
+
+            return unsubscribe;
         } catch (error) {
-            console.error("Error getting document:", error);
+            console.error("Error setting up commits listener:", error);
+            return () => {};
         }
     };
+
+    useEffect(() => {
+        const unsubscribe = fetchCommits();
+        return () => {
+            if (unsubscribe) unsubscribe();
+        };
+    }, [user]);
 
     const now = new Date();
     const dayOfMonth = now.getDate();
@@ -522,20 +393,7 @@ export const Commits = ({ user }) => {
     console.log("Commits Today:", commitsToday);
     console.log("Commit Color:", commitColor);
       
-    const toggleDropdown = () => {
-        const dropdown = document.getElementById("dropdownMenu");
-        if (dropdown.classList.contains("show")) {
-            dropdown.classList.remove("show");
-            setTimeout(() => {
-                dropdown.style.visibility = "hidden";
-            }, 200); // Match transition duration
-        } else {
-            dropdown.style.visibility = "visible";
-            requestAnimationFrame(() => {
-                dropdown.classList.add("show");
-            });
-        }
-    };
+    const toggleDropdownWrapper = () => toggleDropdown();
 
     useEffect(() => {
         const closeDropdowns = (event) => {
@@ -559,23 +417,7 @@ export const Commits = ({ user }) => {
         };
     }, []);
 
-    const toggleFriends = (e) => {
-        e.stopPropagation();
-        const friendsMenu = document.getElementById("friendsMenu");
-        const overlay = document.getElementById("overlay");
-        const dropdown = document.getElementById("dropdownMenu");
-        
-        if (friendsMenu) {
-            const isVisible = friendsMenu.style.display === "block";
-            friendsMenu.style.display = isVisible ? "none" : "block";
-            overlay.style.display = isVisible ? "none" : "block";
-            
-            if (dropdown) {
-                dropdown.classList.remove("show");
-                dropdown.style.visibility = "hidden";
-            }
-        }
-    };
+    const toggleFriendsWrapper = (e) => toggleFriends(e);
 
     useEffect(() => {
         const closeDropdowns = (event) => {
@@ -606,54 +448,7 @@ export const Commits = ({ user }) => {
         };
     }, []);
 
-    const handleFriendRequest = async (e) => {
-        e.preventDefault();
-        if (!friendUsername.trim()) return;
-    
-        const cleanUsername = friendUsername.replace('@', '');
-        
-        try {
-            const usersRef = collection(db, "users");
-            const q = query(usersRef, where("username", "==", cleanUsername));
-            const querySnapshot = await getDocs(q);
-    
-            if (querySnapshot.empty) {
-                console.log("User not found");
-                return;
-            }
-    
-            const targetUserDoc = querySnapshot.docs[0];
-            const batch = writeBatch(db);
-    
-            // Update current user's pending_requests
-            const currentUserRef = doc(db, "users", user.uid);
-            batch.update(currentUserRef, {
-                "requests.pending_requests": arrayUnion(cleanUsername)
-            });
-    
-            // Update target user's incoming_requests
-            batch.update(targetUserDoc.ref, {
-                "requests.incoming_requests": arrayUnion(userData.username)
-            });
-    
-            await batch.commit();
-    
-            // Clear input field immediately
-            setFriendUsername('');
-    
-            // Update UI
-            const updatedUserRef = doc(db, "users", user.uid);
-            const updatedDocSnap = await getDoc(updatedUserRef);
-            if (updatedDocSnap.exists()) {
-                setUserData(updatedDocSnap.data());
-                fetchPendingRequests();
-            }
-
-    
-        } catch (error) {
-            console.error("Error sending friend request:", error);
-        }
-    };
+    const handleFriendRequestWrapper = (e) => handleFriendRequest(e, friendUsername, user, userData, setFriendUsername, setUserData, fetchPendingRequests);
 
     const handleViewToggle = (view) => {
         setActiveView(view);
@@ -757,23 +552,7 @@ export const Commits = ({ user }) => {
     };
 
     // Add this function near your other toggle functions
-    const toggleSettings = (e) => {
-        e.stopPropagation();
-        const settingsMenu = document.getElementById("settingsMenu");
-        const overlay = document.getElementById("overlay");
-        const dropdown = document.getElementById("dropdownMenu");
-        
-        if (settingsMenu) {
-            const isVisible = settingsMenu.style.display === "block";
-            settingsMenu.style.display = isVisible ? "none" : "block";
-            overlay.style.display = isVisible ? "none" : "block";
-            
-            if (dropdown) {
-                dropdown.classList.remove("show");
-                dropdown.style.visibility = "hidden";
-            }
-        }
-    };
+    const toggleSettingsWrapper = (e) => toggleSettings(e);
       
     useEffect(() => {
         const closeDropdowns = (event) => {
@@ -818,79 +597,41 @@ export const Commits = ({ user }) => {
         };
     }, []);
 
-    const handleProfilePictureUpdate = async (event) => {
-        const file = event.target.files[0];
-        if (!file) return;
-    
-        try {
-            setIsUploading(true);
-            if (!userData?.username) {
-                console.error("Username not found in userData");
-                return;
-            }
-    
-            // Delete existing profile pictures
-            const profilePicsRef = ref(storage, 'profile_pictures');
-            const fileList = await listAll(profilePicsRef);
-            
-            const existingPics = fileList.items.filter(item => 
-                item.name.startsWith(userData.username + '.')
-            );
-    
-            await Promise.all(existingPics.map(pic => deleteObject(pic)));
-    
-            // Upload new picture
-            const fileExtension = file.name.split('.').pop();
-            const storageRef = ref(storage, `profile_pictures/${userData.username}.${fileExtension}`);
-            
-            const snapshot = await uploadBytes(storageRef, file);
-            const downloadURL = await getDownloadURL(snapshot.ref);
-            
-            // Update user document
-            const userRef = doc(db, "users", user.uid);
-            await updateDoc(userRef, {
-                pfp: downloadURL
-            });
-    
-            setProfilePic(downloadURL);
-        } catch (error) {
-            console.error("Error updating profile picture:", error);
-        } finally {
-            setIsUploading(false);
-        }
-    };
+    const handleProfilePictureUpdateWrapper = (event) => handleProfilePictureUpdate(event, userData, user, setProfilePic, setIsUploading);
 
     // Add this function
     const handleConfirmProfileUpdate = async (finalPic) => {
         try {
+            console.log("Starting profile update with:", finalPic);
             const userRef = doc(db, "users", user.uid);
+            
+            // Update Firestore
             await updateDoc(userRef, {
                 pfp: finalPic
             });
             
-            setProfilePic(finalPic); // This should trigger a re-render with the new pic
-            console.log("Profile picture updated to:", finalPic);
+            // Update local state
+            setProfilePic(finalPic);
             
-            // Force a refresh of userData
-            const updatedDoc = await getDoc(userRef);
-            if (updatedDoc.exists()) {
-                setUserData(updatedDoc.data());
+            // Update userData
+            const freshDoc = await getDoc(userRef);
+            if (freshDoc.exists()) {
+                setUserData(freshDoc.data());
             }
-            
-            // Close settings menu
-            const settingsMenu = document.getElementById("settingsMenu");
-            const overlay = document.getElementById("overlay");
-            if (settingsMenu) {
-                settingsMenu.style.display = "none";
-                overlay.style.display = "none";
-            }
+
+            console.log("Profile update completed successfully");
         } catch (error) {
             console.error("Error updating profile picture:", error);
         }
     };
+
+    const handleThemeChange = (newTheme) => {
+        setCurrentTheme(newTheme);
+        applyTheme(newTheme);
+    };
     
     return (
-        <div className="main">
+        <div className="main" style={{ backgroundColor: currentTheme.primary }}>
             <Header 
                 firstName={firstName}
                 currentDate={currentDate}
@@ -898,10 +639,10 @@ export const Commits = ({ user }) => {
                 userData={userData}
                 handleSignOut={handleSignOut}
                 profilePic={profilePic}
-                toggleDropdown={toggleDropdown}
+                toggleDropdown={toggleDropdownWrapper}
                 commitsToday={commitsToday}
-                toggleFriends={toggleFriends}
-                toggleSettings={toggleSettings}
+                toggleFriends={toggleFriendsWrapper}
+                toggleSettings={toggleSettingsWrapper}
             />
 
             <CommitGrid 
@@ -950,7 +691,7 @@ export const Commits = ({ user }) => {
                 pendingRequests={pendingRequests}
                 friendUsername={friendUsername}
                 setFriendUsername={setFriendUsername}
-                handleFriendRequest={handleFriendRequest}
+                handleFriendRequest={handleFriendRequestWrapper}
                 handleAcceptRequest={handleAcceptRequest}
                 handleDeclineRequest={handleDeclineRequest}
             />
@@ -958,9 +699,13 @@ export const Commits = ({ user }) => {
             <Settings 
                 profilePic={profilePic}
                 isUploading={isUploading}
-                handleProfilePictureUpdate={handleProfilePictureUpdate}
-                userData={userData}
+                setIsUploading={setIsUploading}
+                userData={{
+                    ...userData,
+                    totalCommits: userData?.commits?.length || 0 // Ensure we're getting the total count
+                }}
                 onConfirm={handleConfirmProfileUpdate}
+                user={user}
             />
 
             <div id="overlay" className="overlay"></div>
