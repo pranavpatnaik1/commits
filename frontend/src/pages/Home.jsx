@@ -4,23 +4,41 @@ import { useNavigate } from "react-router-dom";
 
 export const Home = () => {
     const navigate = useNavigate();
-    const commitWeeks = Array.from({ length: 54 });
+    
+    // Improved calculation to ensure perfect centering
+    const calculateWeeks = () => {
+        const squareWidth = 24; // 19px width + 5px margin
+        const screenWidth = window.innerWidth;
+        // Calculate exact number of weeks that fit the screen
+        return Math.floor(screenWidth / squareWidth) + 1; // Accounts for edge
+    };
+    
+    const [numWeeks, setNumWeeks] = useState(calculateWeeks());
+    const commitWeeks = Array.from({ length: numWeeks });
     const colors = ['#d9d9d9', '#118FE2', '#6DACD5', '#8BD1FF', '#B3E0FF', '#D1EEFF', '#E6F7FF', '#F0FAFF'];
     const [litCommits, setLitCommits] = useState(new Set());
 
-    const getRandomColor = () => {
-        // 80% chance to get the default color
-        return Math.random() > 0.2 ? colors[Math.floor(Math.random() * colors.length)] : colors[0];
+    const shouldRenderBlock = (weekIndex, commitIndex) => {
+        if (commitIndex <= 8) return true; // Bottom squares always show - increased from 7 to 8
+        
+        // Calculate curve based on screen width
+        const halfWeeks = numWeeks / 2;
+        const normalizedWeek = (weekIndex - halfWeeks) / halfWeeks; // -1 to 1 range
+        const heightLimit = (1 - Math.sqrt(1 - normalizedWeek * normalizedWeek)) * 10; // Increased from 8 to 10
+        return commitIndex <= (8 + heightLimit); // Increased from 7 to 8
     };
 
-    const shouldRenderBlock = (weekIndex, commitIndex) => {
-        if (commitIndex <= 7) return true; // Bottom squares always show
+    // Add resize listener
+    useEffect(() => {
+        const handleResize = () => {
+            setNumWeeks(calculateWeeks());
+            // Reset lit commits on resize to avoid display issues
+            setLitCommits(new Set());
+        };
         
-        // concave effect to top portion 
-        const normalizedWeek = (weekIndex - 27) / 27; // -1 to 1 range
-        const heightLimit = (1 - Math.sqrt(1 - normalizedWeek * normalizedWeek)) * 8;
-        return commitIndex <= (8 + heightLimit);
-    };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     useEffect(() => {
         let timeouts = [];
@@ -36,7 +54,7 @@ export const Home = () => {
             });
         });
         return () => timeouts.forEach(t => clearTimeout(t));
-    }, []);
+    }, [numWeeks]);
 
     const getCommitColor = () => {
         return colors[Math.floor(Math.random() * (colors.length - 1)) + 1]; // Skip gray color
@@ -49,12 +67,12 @@ export const Home = () => {
                 <p className="nav-logo">commits</p>
             </nav>
             <div className="home-container">
-                <h2 className="commit-slogan">It's time to <i>commit.</i></h2>
-                <p className="commit-subtitle">Reach your goals, <span className="underline-animation">one commit at a time.</span></p>
-                <button className="start-now-btn" onClick={() => navigate('/signup')}>start now</button>
-                <div className="grid-container">
+                <h2 className="home-commit-slogan">It's time to <i>commit.</i></h2>
+                <p className="home-commit-subtitle">Reach your goals, <span className="home-underline-animation">one commit at a time.</span></p>
+                <button className="home-start-now-btn" onClick={() => navigate('/signup')}>start now</button>
+                <div className="home-grid-container">
                     {commitWeeks.map((_, weekIndex) => (
-                        <div key={weekIndex} className="commit-week">
+                        <div key={weekIndex} className="home-commit-week">
                             {Array.from({ length: 16 }).map((_, commitIndex) => (
                                 shouldRenderBlock(weekIndex, commitIndex) && (
                                     <div 

@@ -17,7 +17,7 @@
     100% { background-color: var(--final-color); }
 }
 
-.commit-slogan {
+.home-commit-slogan {
     font-family: 'Inter';
     font-size: 85px;
     font-weight: 600;
@@ -31,14 +31,16 @@
     z-index: 1;
     white-space: nowrap;
     overflow: visible;
+    width: auto;
+    text-align: center;
 }
 
-.commit-slogan i {
+.home-commit-slogan i {
     display: inline-block;
     animation: fadeIn 1s ease-out forwards;
 }
 
-.commit-subtitle {
+.home-commit-subtitle {
     font-family: 'Inter';
     font-size: 22px;
     font-weight: 400;
@@ -54,9 +56,11 @@
     z-index: 1;
     white-space: nowrap;
     overflow: visible;
+    width: auto;
+    text-align: center;
 }
 
-.start-now-btn {
+.home-start-now-btn {
     font-family: 'Inter';
     position: absolute;
     left: 50%;
@@ -79,13 +83,13 @@
     z-index: 1000;
 }
 
-.start-now-btn:hover {
+.home-start-now-btn:hover {
     border: 3px solid white;
     background-color: #169eff;
     transform: translate(-50%, -50%) scale(1.05); 
 }
 
-.start-now-btn:active {
+.home-start-now-btn:active {
     background-color: #106db0;
 }
 
@@ -112,7 +116,9 @@
     height: 100vh;
     box-sizing: border-box;
     display: flex;
-    align-items: flex-end;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
     overflow: hidden;
     padding-top: 60px;  /* Add padding to account for fixed nav */
 }
@@ -138,12 +144,12 @@
     }
 }
 
-.underline-animation {
+.home-underline-animation {
     position: relative;
     display: inline-block;
 }
 
-.underline-animation::after {
+.home-underline-animation::after {
     content: '';
     position: absolute;
     left: 0;
@@ -155,16 +161,18 @@
     animation-delay: 1s;
 }
 
-.grid-container {
+.home-grid-container {
     display: flex;
     width: 100%;
-    overflow-x: auto;
+    overflow: hidden; /* Change from auto to hidden */
     background-color: #1479BC;
     justify-content: center;
     align-items: flex-end;
+    margin: 0;
+    padding: 0;
 }
 
-.commit-week {
+.home-commit-week {
     background: none;
     margin-right: 5px;
     flex-shrink: 0;
@@ -200,4 +208,19 @@
     font-weight: 600;
     color: white;
     text-decoration: none;
+}
+
+/* Add media queries for responsive text */
+@media screen and (max-width: 768px) {
+    .home-commit-slogan {
+        font-size: 60px;
+        white-space: normal;
+        width: 90%;
+    }
+    
+    .home-commit-subtitle {
+        font-size: 18px;
+        white-space: normal;
+        width: 90%;
+    }
 }
