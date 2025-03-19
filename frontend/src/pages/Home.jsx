@@ -22,7 +22,7 @@ export const Home = () => {
     // Update the shouldRenderBlock function to have a taller curve on smaller screens
     const shouldRenderBlock = (weekIndex, commitIndex) => {
         // Check if we're on a small screen
-        const isSmallScreen = window.innerWidth <= 700;
+        const isSmallScreen = window.innerWidth <= 800;
         const isBigScreen = window.innerWidth >= 1800;
         
         // Increase base height for small screens (from 8 to 10)
