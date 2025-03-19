@@ -224,3 +224,30 @@
         width: 90%;
     }
 }
+
+/* Add media query for larger screens without shifting layout */
+@media screen and (min-width: 1400px) {
+    .home-commit-slogan {
+        font-size: 105px; /* Larger font for big screens */
+    }
+    
+    .home-commit-subtitle {
+        font-size: 26px; /* Larger subtitle for big screens */
+    }
+    
+    .home-start-now-btn {
+        font-size: 28px; /* Larger button text */
+        padding: 12px 24px; /* Slightly larger padding */
+    }
+}
+
+/* Very large screens */
+@media screen and (min-width: 1800px) {
+    .home-commit-slogan {
+        font-size: 120px; /* Even larger for very big screens */
+    }
+    
+    .home-commit-subtitle {
+        font-size: 30px; /* Even larger for very big screens */
+    }
+}
