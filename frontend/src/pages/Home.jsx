@@ -12,7 +12,7 @@ export const Home = () => {
         // Calculate exact number of weeks that fit the screen
         return Math.floor(screenWidth / squareWidth) + 1; // Accounts for edge
     }; 
-    
+     
     const [numWeeks, setNumWeeks] = useState(calculateWeeks());
     const commitWeeks = Array.from({ length: numWeeks });
     const colors = ['#d9d9d9', '#118FE2', '#6DACD5', '#8BD1FF', '#B3E0FF', '#D1EEFF', '#E6F7FF', '#F0FAFF'];
