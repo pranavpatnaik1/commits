@@ -5,12 +5,12 @@ import { useNavigate } from "react-router-dom";
 export const Home = () => {
     const navigate = useNavigate();
     
-    // Improved calculation to ensure perfect centering
+    // Update the calculateWeeks function to add more weeks based on screen width
     const calculateWeeks = () => {
         const squareWidth = 24; // 19px width + 5px margin
         const screenWidth = window.innerWidth;
-        // Calculate exact number of weeks that fit the screen
-        return Math.floor(screenWidth / squareWidth) + 1; // Accounts for edge
+        // Add more weeks as the screen gets wider
+        return Math.floor(screenWidth / squareWidth) + 1; // This automatically adds more columns
     }; 
      
     const [numWeeks, setNumWeeks] = useState(calculateWeeks());
@@ -18,14 +18,16 @@ export const Home = () => {
     const colors = ['#d9d9d9', '#118FE2', '#6DACD5', '#8BD1FF', '#B3E0FF', '#D1EEFF', '#E6F7FF', '#F0FAFF'];
     const [litCommits, setLitCommits] = useState(new Set());
 
+    // Update the shouldRenderBlock function to extend the bottom row with screen width
     const shouldRenderBlock = (weekIndex, commitIndex) => {
+        // Base height stays the same
         if (commitIndex <= 8) return true; // Bottom squares always show - increased from 7 to 8
         
-        // Calculate curve based on screen width
+        // Calculate curve based on screen width - keeps same curve shape
         const halfWeeks = numWeeks / 2;
         const normalizedWeek = (weekIndex - halfWeeks) / halfWeeks; // -1 to 1 range
-        const heightLimit = (1 - Math.sqrt(1 - normalizedWeek * normalizedWeek)) * 10; // Increased from 8 to 10
-        return commitIndex <= (8 + heightLimit); // Increased from 7 to 8
+        const heightLimit = (1 - Math.sqrt(1 - normalizedWeek * normalizedWeek)) * 10; 
+        return commitIndex <= (8 + heightLimit);
     };
 
     // Add resize listener

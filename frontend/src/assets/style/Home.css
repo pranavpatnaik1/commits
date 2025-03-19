@@ -40,9 +40,10 @@
     animation: fadeIn 1s ease-out forwards;
 }
 
+/* Update the base subtitle style to use clamp for smoother scaling */
 .home-commit-subtitle {
     font-family: 'Inter';
-    font-size: 22px;
+    font-size: clamp(22px, 2vw, 26px); /* Base responsive scaling */
     font-weight: 400;
     position: absolute;
     left: 50%;
@@ -225,29 +226,49 @@
     }
 }
 
-/* Add media query for larger screens without shifting layout */
+/* Fix the media queries for larger screens */
 @media screen and (min-width: 1400px) {
     .home-commit-slogan {
-        font-size: 105px; /* Larger font for big screens */
+        font-size: 105px;
     }
     
     .home-commit-subtitle {
-        font-size: 26px; /* Larger subtitle for big screens */
+        font-size: 28px; /* Increased from 26px */
     }
     
     .home-start-now-btn {
-        font-size: 28px; /* Larger button text */
-        padding: 12px 24px; /* Slightly larger padding */
+        font-size: 28px;
+        padding: 12px 24px;
     }
 }
 
-/* Very large screens */
 @media screen and (min-width: 1800px) {
     .home-commit-slogan {
-        font-size: 120px; /* Even larger for very big screens */
+        font-size: 120px;
     }
     
     .home-commit-subtitle {
-        font-size: 30px; /* Even larger for very big screens */
+        font-size: 34px; /* Increased from 30px */
+    }
+    
+    .home-start-now-btn {
+        font-size: 32px;
+        padding: 14px 30px;
+    }
+}
+
+/* Add an extra breakpoint for very large screens */
+@media screen and (min-width: 2200px) {
+    .home-commit-slogan {
+        font-size: 140px;
+    }
+    
+    .home-commit-subtitle {
+        font-size: 40px;
+    }
+    
+    .home-start-now-btn {
+        font-size: 36px;
+        padding: 16px 34px;
     }
 }
