@@ -17,17 +17,29 @@ export const Home = () => {
     const commitWeeks = Array.from({ length: numWeeks });
     const colors = ['#d9d9d9', '#118FE2', '#6DACD5', '#8BD1FF', '#B3E0FF', '#D1EEFF', '#E6F7FF', '#F0FAFF'];
     const [litCommits, setLitCommits] = useState(new Set());
+    const [forceUpdate, setForceUpdate] = useState(0);
 
-    // Update the shouldRenderBlock function to extend the bottom row with screen width
+    // Update the shouldRenderBlock function to have a taller curve on smaller screens
     const shouldRenderBlock = (weekIndex, commitIndex) => {
-        // Base height stays the same
-        if (commitIndex <= 8) return true; // Bottom squares always show - increased from 7 to 8
+        // Check if we're on a small screen
+        const isSmallScreen = window.innerWidth <= 700;
+        const isBigScreen = window.innerWidth >= 1800;
+        
+        // Increase base height for small screens (from 8 to 10)
+        const baseHeight = isSmallScreen ? 11 : isBigScreen ? 11 : 8;
+        
+        // Bottom squares always show up to the baseHeight
+        if (commitIndex <= baseHeight) return true;
         
         // Calculate curve based on screen width - keeps same curve shape
         const halfWeeks = numWeeks / 2;
         const normalizedWeek = (weekIndex - halfWeeks) / halfWeeks; // -1 to 1 range
-        const heightLimit = (1 - Math.sqrt(1 - normalizedWeek * normalizedWeek)) * 10; 
-        return commitIndex <= (8 + heightLimit);
+        
+        // Increase curve height multiplier for small screens (from 10 to 12)
+        const heightMultiplier = isSmallScreen ? 13 : isBigScreen ? 7 : 10;
+        const heightLimit = (1 - Math.sqrt(1 - normalizedWeek * normalizedWeek)) * heightMultiplier;
+        
+        return commitIndex <= (baseHeight + heightLimit);
     };
 
     // Add resize listener
@@ -36,6 +48,8 @@ export const Home = () => {
             setNumWeeks(calculateWeeks());
             // Reset lit commits on resize to avoid display issues
             setLitCommits(new Set());
+            // Force re-render to apply new curve height
+            setForceUpdate(prev => prev + 1);
         };
         
         window.addEventListener('resize', handleResize);
