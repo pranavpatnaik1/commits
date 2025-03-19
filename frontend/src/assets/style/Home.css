@@ -213,6 +213,10 @@
 
 /* Add media queries for responsive text */
 @media screen and (max-width: 700px) {
+    .home-container {
+        overflow-y: hidden;
+    }
+
     .nav-bar {
         height: 50px;
         padding: 0 30px;
