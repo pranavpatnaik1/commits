@@ -11,7 +11,7 @@ export const Home = () => {
         const screenWidth = window.innerWidth;
         // Calculate exact number of weeks that fit the screen
         return Math.floor(screenWidth / squareWidth) + 1; // Accounts for edge
-    };
+    }; 
     
     const [numWeeks, setNumWeeks] = useState(calculateWeeks());
     const commitWeeks = Array.from({ length: numWeeks });
