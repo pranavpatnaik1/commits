@@ -37,6 +37,19 @@ body {
     margin-bottom: 80px;
 }
 
+@media screen and (min-width: 1600px) {
+    .main {
+        padding-left: 130px;
+        padding-bottom: 10px;
+    }
+
+    .committer {
+        margin: -20px;
+        top: 96% !important;
+        width: 65% !important;
+    }
+}
+
 .main h2 {
     margin: 0;
 }

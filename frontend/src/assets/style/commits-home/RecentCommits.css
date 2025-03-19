@@ -1,0 +1,136 @@
+.recent-commits {
+    border: 2px solid white;
+    background-color: var(--recent-box-color);
+    height: 400px;
+    width: 700px;
+    border-radius: 10px;
+    box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.445);
+    margin-right: 15px;
+    overflow-y: hidden;
+}
+
+.recent-title {
+    margin: 0;
+    margin-top: 15px;
+    background-color: transparent;
+    background: transparent;
+    margin-left: 22px;
+    font-size: 40px;
+    font-weight: 600;
+}
+
+.recent-commits p u {
+    text-decoration: underline; /* Explicitly apply underline styling */
+    background-color: transparent; /* Ensure background doesn't change when underlined */
+    text-shadow: 0px 2px 3px rgba(0, 0, 0, 0.445);
+}
+
+.recent-box {
+    background-color: #ffffff;
+    margin-left: 20px;
+    margin-top: 10px;
+    width: calc(100% - 40px);
+    height: calc(100% - 105px);
+    border-radius: 5px;
+    box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.445);
+    border: 2px solid #D3ECFC;
+    overflow-y: auto;
+    padding-top: 5px;
+}
+
+.recent-box::-webkit-scrollbar {
+    width: 4px;
+}
+
+.recent-box::-webkit-scrollbar-track {
+    background-color: transparent;
+    border-radius: 10px;
+}
+
+.recent-box::-webkit-scrollbar-thumb {
+    background-color: #c2e4ff; /* Optional: Customize the scrollbar color */
+    border-radius: 10px;
+}
+
+.commit-entry {
+    font-size: 15px;
+    background-color: #BDE5FF;
+    margin-top: 5px;
+    margin-bottom: 10px;
+    margin-left: 8px;
+    margin-right: 8px;
+    padding-top: 0px;
+    padding-left: 10px;
+    padding-bottom: 0px;
+    border-radius: 5px;
+    color: #15a1ff;
+    border: 3px solid #b0ddff;
+    box-shadow: 0px 0px 3px rgb(22, 123, 255);
+    transition: 0.1s;
+    animation: slideInFade 0.3s ease-out forwards;
+    opacity: 0; /* Start invisible */
+    /* Add this to ensure each new commit appears on top */
+    position: relative;
+    z-index: 1;
+    transition: transform 0.2s ease;
+}
+
+.commit-entry:hover {
+    transform: scale(1.1);
+}
+
+.commit-name {
+    font-weight: 700;
+    margin-top: 0;
+    margin-bottom: 0;
+    background-color: transparent;
+}
+
+.commit-time {
+    background-color: transparent;
+    margin-top: 0;
+    font-weight: 500;
+    font-size: 11px;
+    font-style: italic;
+    text-decoration: underline;
+}
+
+@keyframes slideInFade {
+    0% {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.no-commits {
+    text-align: center;
+    color: #1479BC;
+    font-style: italic;
+    opacity: 0.7;
+}
+
+/* Media queries for responsive design */
+@media screen and (min-width: 1400px) {
+    .recent-title {
+        font-size: 46px;
+    }
+    
+    .recent-commits {
+        height: 450px;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .recent-commits {
+        width: 100%;
+        margin-right: 0;
+    }
+    
+    .recent-title {
+        font-size: 32px;
+    }
+}

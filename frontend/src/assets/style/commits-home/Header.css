@@ -1,0 +1,233 @@
+.user-greeting {
+    display: flex;
+    justify-content: space-between; /* Distributes space between elements */
+    align-items: center;
+    width: 100%;
+}
+
+.profile {
+    display: flex;
+    justify-content: end; /* Aligns the profile pic to the right */
+}
+
+.welcome {
+    width: 100%;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    color: white;
+    text-shadow: 0px 2px 5px rgba(0, 0, 0, 0.445);
+}
+
+.welcome h2 {
+    font-style: italic;
+    font-weight: 600;
+    font-size: 40px;
+    margin: 0;
+    line-height: 1.2;
+    opacity: 0;
+    animation: fadeIn 0.4s ease-in forwards;
+}
+
+.welcome .name {
+    color: #D0E4F2;
+    opacity: 0;
+    animation: fadeIn 0.4s ease-in forwards;
+    animation-delay: 0.4s;
+}
+
+.profile-pic {
+    object-fit: cover;
+    width: 50px;
+    height: 50px;
+    border-radius: 80px;
+    border: 2px solid white;
+    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.445);
+    z-index: 3;
+    transition: 0.2s;
+}
+
+.profile-pic:hover {
+    transform: scale(1.1);
+}
+
+.profile-pic:active {
+    transform: scale(1.2);
+}
+
+.dropdown-content {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    background-color: #fff;
+    min-width: 300px;
+    min-height: 100px;
+    box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+    border-radius: 5px;
+    color: black;
+    padding: 20px;
+    margin-right: 25px;
+    margin-top: 25px;
+    z-index: 2;
+    
+    /* Animation properties */
+    transform-origin: top right;
+    transition: all 0.2s ease-out;
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(0.95);
+    pointer-events: none;
+}
+
+.dropdown-content.show {
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1);
+    pointer-events: auto;
+}
+
+.dropdown-content hr {
+    border: none;
+    height: 1px;
+    background-color: #D3ECFC;
+    margin: 15px 0;
+}
+
+.dropdown-content .admin {
+    display: flex;
+    align-items: center;
+}
+
+.dropdown-content .log-out {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.dropdown-content .user-official-name {
+    margin: 0;
+    margin-bottom: 0;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.dropdown-content .username {
+    margin: 0px 0;
+    font-size: 14px;
+    opacity: 0.7;
+}
+
+.dropdown-content .commit-number {
+    margin: 5px 0;
+    font-size: 13px;
+    opacity: 0.5;
+}
+
+.username {
+    margin: 0;
+    font-size: 14px;
+    opacity: 0.7;
+}
+
+.user-official-name {
+    color: #1479BC;
+}
+
+.commit-number {
+    margin-top: 0;
+    font-size: 13px;
+    opacity: 0.5;
+}
+
+.admin {
+    margin: 0;
+    display: flex;
+    align-items: center;
+}
+
+.settings {
+    display: flex;
+    width: 30px;
+    height: 30px;
+    margin-top: 10px;
+    margin-left: 10px;
+    transition: 0.1s;
+}
+
+.settings:hover {
+    transform: scale(1.1);
+    opacity: 0.7;
+    cursor: pointer;
+}
+
+.log-out {
+    background-color: #1479BC;
+    transition: 0.2s;
+}
+
+.log-out:hover {
+    transform: scale(1.01);
+    background-color: #22b2ff;
+}
+
+.time {
+    margin-right: 18px;
+    padding: 5px;
+    padding-right: 7px;
+    padding-left: 7px;
+    border-radius: 5px;
+    background-color: #71b3df;
+    box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.445);
+    transition: 0.2s;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.time:hover {
+    background-color: #7ecbff;
+    box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.445);
+    cursor: default;
+}
+
+.day {
+    margin-right: 10px;
+    padding: 5px;
+    padding-right: 7px;
+    padding-left: 7px;
+    border-radius: 5px;
+    font-weight: 500;
+    background-color: #71b3df;
+    box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.445);
+    transition: 0.2s;
+    white-space: nowrap;
+}
+
+.day:hover {
+    background-color: #7ecbff;
+    box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.445);
+    cursor: default;
+}
+
+/* Media queries for responsive design */
+@media screen and (min-width: 1400px) {
+    .welcome h2 {
+        font-size: 46px;
+    }
+    
+    .profile-pic {
+        width: 60px;
+        height: 60px;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .welcome h2 {
+        font-size: 32px;
+    }
+    
+    .dropdown-content {
+        min-width: 250px;
+    }
+}
