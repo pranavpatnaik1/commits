@@ -87,9 +87,6 @@ export const Home = () => {
                 <p className="home-commit-subtitle">Reach your goals, <span className="home-underline-animation">one commit at a time.</span></p>
                 <button className="home-start-now-btn" onClick={() => navigate('/signup')}>start now</button>
                 
-                {/* Add this div for the background behind the grid */}
-                <div className="grid-background"></div>
-                
                 <div className="home-grid-container">
                     {commitWeeks.map((_, weekIndex) => (
                         <div key={weekIndex} className="home-commit-week">

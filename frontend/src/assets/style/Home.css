@@ -135,7 +135,7 @@
     justify-content: center;
     background-color: #d9d9d9;
     position: relative;
-    z-index: 3;
+    z-index: 4; /* Above home-commit-week */
 }
 
 .home-commit.lit {
@@ -202,21 +202,21 @@
     width: 100%;
     overflow: hidden;
     background: 
-        /* Stronger inner glow */
+        /* Stronger inner glow at center */
         radial-gradient(
             ellipse at center,
             rgba(255, 255, 255, 0.847) 0%,
             rgba(255, 255, 255, 0.447) 20%,
             rgba(255, 255, 255, 0) 40%
         ),
-        /* More vibrant blue glow */
+        /* Bottom glow that doesn't extend to the squares */
         radial-gradient(
-            ellipse at center,
-            rgba(118, 215, 255, 0.6) 0%,
-            rgba(72, 172, 248, 0.45) 20%,
-            rgba(20, 121, 188, 0.35) 40%,
-            rgba(20, 121, 188, 0.2) 60%,
-            rgba(20, 121, 188, 0) 80%
+            ellipse at center bottom,
+            rgba(118, 215, 255, 0.8) 0%,
+            rgba(72, 172, 248, 0.6) 15%,
+            rgba(20, 121, 188, 0.4) 30%,
+            rgba(20, 121, 188, 0.2) 45%,
+            rgba(20, 121, 188, 0) 60%
         ),
         #1479BC;
     justify-content: center;
@@ -225,13 +225,7 @@
     padding: 0;
     position: relative;
     z-index: 1;
-    /* Replace the harsh inset shadow with a softer one */
-    box-shadow: inset 0 0 0px rgba(0, 0, 0, 0.1);
-    z-index: 1;
-    position: relative;
-    /* Add a subtler breathing animation */
     animation: subtleBreathing 10s ease-in-out infinite;
-    /* Make sure backgrounds stay centered */
     background-position: center;
 }
 
@@ -244,7 +238,7 @@
     flex-direction: column;
     justify-content: flex-end;
     position: relative;
-    z-index: 2;
+    z-index: 3; /* Above home-grid-container */
 }
 
 .home-logo {
@@ -369,24 +363,4 @@
     0% { opacity: 0.9; }
     50% { opacity: 1; }
     100% { opacity: 0.9; }
-}
-
-/* Apply the animation to the grid-background element */
-.grid-background {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 50%;  /* Adjust height as needed */
-    background: radial-gradient(
-        ellipse at center bottom,
-        rgba(13, 89, 145, 1) 0%,
-        rgba(20, 121, 188, 0.8) 40%,
-        rgba(20, 121, 188, 0.4) 80%
-    );
-    z-index: 0;  /* Place it behind the grid */
-    /* Add the breathing animation */
-    animation: gradientBreathing 8s ease-in-out infinite;
-    /* Make sure the background stays centered while it scales */
-    background-position: center;
 }
