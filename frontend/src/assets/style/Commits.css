@@ -25,35 +25,28 @@ body {
 
 .main {
     font-family: "Inter";
-    margin: 0 auto; /* Center the container horizontally */
+    margin-left: 50px;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    align-items: center; /* Center children horizontally */
+    align-items: flex-start;
     justify-content: flex-start;
     padding-top: 20px;
-    width: 90%; /* Use percentage width */
-    max-width: 1400px; /* Prevent stretching on large screens */
+    width: calc(100% - 160px);
     box-sizing: border-box; 
     margin-bottom: 80px;
 }
 
 @media screen and (min-width: 1600px) {
     .main {
-        max-width: 1600px; /* Larger max-width for big screens */
+        padding-left: 130px;
+        padding-bottom: 10px;
     }
 
     .committer {
-        width: 70%;
-        max-width: 1400px;
-        bottom: 40px;
-    }
-}
-
-/* Adjust for medium-large screens */
-@media screen and (min-width: 1200px) and (max-width: 1599px) {
-    .main {
-        max-width: 1200px;
+        margin: -20px;
+        top: 96% !important;
+        width: 65% !important;
     }
 }
 
@@ -67,10 +60,9 @@ body {
 
 .user-greeting {
     display: flex;
-    justify-content: space-between;
+    justify-content: space-between; /* Distributes space between elements */
     align-items: center;
-    width: 100%; /* Full width of parent */
-    margin-bottom: 20px; /* Add some space below */
+    width: 100%;
 }
 
 .profile {
@@ -194,8 +186,8 @@ body {
 .commits {
     font-size: 15px;
     font-family: 'Inter';
-    width: 100%; /* Full width of parent */
-    margin-top: 20px;
+    margin-top: 0px;
+    width: 100%;
     font-weight: 300;
 }
 
@@ -210,7 +202,7 @@ body {
     background-color: var(--commit-box-color);
     align-items: center;
     height: 170px;
-    width: 100%; /* Full width of parent */
+    max-width: 100%;
     margin-bottom: 20px;
     border: 2px solid white;
     border-radius: 10px;
@@ -220,7 +212,6 @@ body {
     display: flex;
     overflow-x: auto;
     overflow-y: hidden;
-    justify-content: center; /* Center commit weeks */
 }
 
 .commit-week.not-current-month .commit {
@@ -314,10 +305,6 @@ body {
 
 .interaction {
     display: flex;
-    width: 100%; /* Full width of parent */
-    justify-content: center; /* Center the interaction elements */
-    margin-top: 20px;
-    gap: 15px; /* Add space between elements */
 }
 
 /* RECENT COMMITS */
@@ -353,9 +340,12 @@ body {
     border: 2px solid white;
     background-color: var(--recent-box-color);
     height: 400px;
-    flex: 1; /* Take available space */
-    max-width: 700px; /* Maximum width */
-    margin-right: 0; /* Remove right margin */
+    width: 700px;
+
+    border-radius: 10px;
+    box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.445);
+
+    margin-right: 15px;
     overflow-y: hidden;
 }
 
@@ -381,9 +371,9 @@ body {
     border: 2px solid white;
     background-color: var(--leaderboard-box-color);
     border-radius: 10px;
-    flex: 1; /* Take available space */
-    max-width: 450px; /* Maximum width */
+
     height: 400px;
+    width: 448px;
     box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.445);
 }
 
@@ -488,20 +478,21 @@ body {
 /* COMMITTER BOX */
 
 .committer {
+    display: flex;
+    align-items: center; /* Centers items vertically */
     position: fixed;
-    bottom: 30px;
+    width: calc(100% - 300px);
     left: 50%;
-    transform: translateX(-50%);
-    width: 80%;
-    max-width: 1200px;
+    top: 92%;
+    transform: translate(-50%, -50%);
     background-color: white;
-    padding: 10px 20px;
+    padding: 10px;
     border-radius: 10px;
     border: 4px solid var(--accent-color);
+    transition: 0.2s;
+
     box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.445);
     z-index: 3;
-    display: flex;
-    align-items: center;
 }
 
 .committer:focus-within {
