@@ -37,6 +37,19 @@ body {
     margin-bottom: 80px;
 }
 
+@media screen and (min-width: 1400px) {
+    .main {
+        padding-left: 60px;
+        padding-bottom: 10px;
+    }
+
+    .committer {
+        margin: -20px;
+        top: 96% !important;
+        width: 65% !important;
+    }
+}
+
 @media screen and (min-width: 1600px) {
     .main {
         padding-left: 130px;
@@ -47,6 +60,32 @@ body {
         margin: -20px;
         top: 96% !important;
         width: 65% !important;
+    }
+}
+
+@media screen and (min-width: 1700px) {
+    .main {
+        padding-left: 200px;
+        padding-bottom: 10px;
+    }
+
+    .committer {
+        margin: -20px;
+        top: 96% !important;
+        width: 55% !important;
+    }
+}
+
+@media screen and (min-width: 1800px) {
+    .main {
+        padding-left: 300px;
+        padding-bottom: 10px;
+    }
+
+    .committer {
+        margin: -20px;
+        top: 96% !important;
+        width: 55% !important;
     }
 }
 
