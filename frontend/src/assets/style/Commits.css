@@ -15,12 +15,17 @@
     --button-hover: #1479BC;
 }
 
-html {
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
     overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 
 body {
     background-color: #1479BC;
+    display: flex;
+    justify-content: center; /* Center content horizontally */
 }
 
 .main {
@@ -36,6 +41,16 @@ body {
     max-width: 1400px; /* Prevent stretching on large screens */
     box-sizing: border-box; 
     margin-bottom: 80px;
+    position: relative; /* Ensure proper positioning context */
+    left: 0; /* Reset any left positioning */
+    transform: none; /* Remove any transforms that might affect centering */
+}
+
+/* Make sure App container is also centered */
+#root {
+    width: 100%;
+    display: flex;
+    justify-content: center;
 }
 
 @media screen and (min-width: 1600px) {
